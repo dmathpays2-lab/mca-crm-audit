@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCA Broker CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f9fafb; color: #111827; }
+        
+        /* Layout */
+        .app { display: flex; min-height: 100vh; }
+        .sidebar { width: 256px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: 100vh; z-index: 50; }
+        .main { flex: 1; margin-left: 256px; padding: 2rem; }
+        
+        /* Sidebar */
+        .logo { display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
+        .logo-icon { width: 32px; height: 32px; background: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; margin-right: 12px; }
+        .logo-text { font-size: 1.25rem; font-weight: 700; }
+        
+        .nav { padding: 1rem; }
+        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.25rem; border-radius: 0.5rem; color: #374151; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+        .nav-item:hover { background: #f3f4f6; }
+        .nav-item.active { background: #eef2ff; color: #4f46e5; }
+        .nav-item i { width: 20px; margin-right: 12px; }
+        
+        .user-section { position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; border-top: 1px solid #e5e7eb; }
+        .user { display: flex; align-items: center; }
+        .user-avatar { width: 40px; height: 40px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+        .user-info { margin-left: 12px; }
+        .user-name { font-weight: 500; font-size: 0.875rem; }
+        .user-company { font-size: 0.75rem; color: #6b7280; }
+        
+        /* Cards */
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .card-title { font-size: 1.125rem; font-weight: 600; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-header { display: flex; align-items: center; margin-bottom: 0.75rem; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem; }
+        .stat-icon.blue { background: #3b82f6; color: white; }
+        .stat-icon.red { background: #ef4444; color: white; }
+        .stat-icon.green { background: #22c55e; color: white; }
+        .stat-icon.purple { background: #8b5cf6; color: white; }
+        .stat-label { font-size: 0.875rem; color: #6b7280; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-subtitle { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+        
+        /* Progress Bar */
+        .progress-container { margin-top: 1rem; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .progress-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #4f46e5; background: #e0e7ff; padding: 0.25rem 0.75rem; border-radius: 9999px; }
+        .progress-value { font-size: 0.75rem; font-weight: 600; color: #4f46e5; }
+        .progress-bar { height: 16px; background: #e0e7ff; border-radius: 9999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #4f46e5; border-radius: 9999px; transition: width 0.5s; }
+        .progress-text { font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem; }
+        
+        /* Tables */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; }
+        td { padding: 1rem; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .badge-hot { background: #fef2f2; color: #dc2626; }
+        .badge-warm { background: #fffbeb; color: #d97706; }
+        .badge-cold { background: #f3f4f6; color: #4b5563; }
+        .badge-new { background: #dbeafe; color: #2563eb; }
+        .badge-contacted { background: #f3e8ff; color: #9333ea; }
+        .badge-qualified { background: #ccfbf1; color: #0d9488; }
+        .badge-application { background: #e0e7ff; color: #4f46e5; }
+        .badge-submitted { background: #cffafe; color: #0891b2; }
+        .badge-approved { background: #d1fae5; color: #059669; }
+        .badge-funded { background: #dcfce7; color: #16a34a; }
+        .badge-paid { background: #ecfccb; color: #65a30d; }
+        
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn-secondary:hover { background: #e5e7eb; }
+        
+        /* Pipeline */
+        .pipeline { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
+        .pipeline-column { min-width: 280px; background: #f9fafb; border-radius: 0.75rem; }
+        .pipeline-header { padding: 0.75rem 1rem; border-radius: 0.75rem 0.75rem 0 0; color: white; font-weight: 600; display: flex; justify-content: space-between; }
+        .pipeline-count { background: rgba(255,255,255,0.2); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
+        .pipeline-body { padding: 0.75rem; min-height: 200px; }
+        .lead-card { background: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; border-left: 4px solid; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; }
+        .lead-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .lead-card.hot { border-left-color: #ef4444; }
+        .lead-card.warm { border-left-color: #f59e0b; }
+        .lead-card.cold { border-left-color: #9ca3af; }
+        .lead-title { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
+        .lead-industry { font-size: 0.75rem; color: #6b7280; }
+        .lead-revenue { font-size: 0.75rem; color: #16a34a; font-weight: 500; margin-top: 0.5rem; }
+        .lead-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; }
+        .form-input:focus { outline: none; border-color: #4f46e5; ring: 2px solid #e0e7ff; }
+        
+        /* Filters */
+        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filter-input { flex: 1; min-width: 250px; position: relative; }
+        .filter-input i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .filter-input input { width: 100%; padding: 0.5rem 0.75rem 0.5rem 2.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; }
+        .filter-select { width: 180px; }
+        .filter-select select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: white; }
+        
+        /* Tabs */
+        .tabs { border-bottom: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
+        .tab-list { display: flex; gap: 2rem; }
+        .tab { padding: 1rem 0; font-size: 0.875rem; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+        
+        /* Calendar */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .calendar-nav { display: flex; gap: 0.5rem; align-items: center; }
+        .calendar-nav button { padding: 0.5rem; border: none; background: #f3f4f6; border-radius: 0.5rem; cursor: pointer; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+        .calendar-day-header { text-align: center; padding: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #6b7280; }
+        .calendar-day { min-height: 100px; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; }
+        .calendar-day.today { border-color: #4f46e5; background: #eef2ff; }
+        .calendar-day-number { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+        .calendar-day.today .calendar-day-number { color: #4f46e5; }
+        .calendar-event { font-size: 0.75rem; padding: 0.25rem; background: #fef3c7; border-radius: 0.25rem; margin-top: 0.25rem; }
+        
+        /* Chart */
+        .chart-container { height: 300px; position: relative; }
+        .chart-bar { display: flex; align-items: flex-end; justify-content: center; gap: 0.5rem; height: 250px; padding: 1rem; }
+        .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .bar { width: 100%; max-width: 40px; border-radius: 0.25rem 0.25rem 0 0; position: relative; }
+        .bar-commission { background: #4f46e5; }
+        .bar-funded { background: #22c55e; opacity: 0.7; }
+        .bar-label { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; transform: rotate(-45deg); white-space: nowrap; }
+        
+        /* Page Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .page-title { font-size: 1.5rem; font-weight: 700; }
+        
+        /* Detail View */
+        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        .detail-section h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; }
+        .detail-item { display: flex; align-items: flex-start; margin-bottom: 1rem; }
+        .detail-item i { width: 20px; color: #9ca3af; margin-right: 0.75rem; margin-top: 0.25rem; }
+        .detail-label { font-size: 0.75rem; color: #6b7280; }
+        .detail-value { font-weight: 500; }
+        .detail-value a { color: #4f46e5; text-decoration: none; }
+        
+        /* Activity feed */
+        .activity-item { display: flex; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.75rem; }
+        .activity-icon { width: 32px; height: 32px; background: #e0e7ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: #4f46e5; }
+        .activity-content { flex: 1; }
+        .activity-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
+        .activity-type { font-weight: 500; text-transform: capitalize; }
+        .activity-time { font-size: 0.75rem; color: #9ca3af; }
+        
+        /* Hide/show pages */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* Settings sidebar */
+        .settings-nav { background: white; border-radius: 0.75rem; padding: 0.5rem; }
+        .settings-nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.25rem; border-radius: 0.5rem; color: #374151; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+        .settings-nav-item:hover { background: #f3f4f6; }
+        .settings-nav-item.active { background: #eef2ff; color: #4f46e5; }
+        .settings-nav-item i { width: 20px; margin-right: 12px; }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-chart-bar"></i></div>
+                <span class="logo-text">MCA CRM</span>
+            </div>
+            
+            <nav class="nav">
+                <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a class="nav-item" data-page="leads" onclick="navigate('leads')">
+                    <i class="fas fa-users"></i> Leads
+                </a>
+                <a class="nav-item" data-page="pipeline" onclick="navigate('pipeline')">
+                    <i class="fas fa-columns"></i> Pipeline
+                </a>
+                <a class="nav-item" data-page="calendar" onclick="navigate('calendar')">
+                    <i class="fas fa-calendar"></i> Calendar
+                </a>
+                <a class="nav-item" data-page="commissions" onclick="navigate('commissions')">
+                    <i class="fas fa-dollar-sign"></i> Commissions
+                </a>
+                <a class="nav-item" data-page="funders" onclick="navigate('funders')">
+                    <i class="fas fa-building"></i> Funders
+                </a>
+                <a class="nav-item" data-page="settings" onclick="navigate('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </nav>
+            
+            <div class="user-section">
+                <div class="user">
+                    <div class="user-avatar">DM</div>
+                    <div class="user-info">
+                        <div class="user-name">Damon Mathews</div>
+                        <div class="user-company">Mathews Funding</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Page -->
+            <div class="page active" id="dashboard-page">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <!-- FIXED: Add Lead button now opens the modal directly instead of navigating -->
+                    <button class="btn btn-primary" onclick="navigateToAddLead()">
+                        <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add Lead
+                    </button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <div>
+                                <div class="stat-label">Total Leads</div>
+                                <div class="stat-value" id="stat-total-leads">10</div>
+                                <div class="stat-subtitle"><span id="stat-hot">5</span> hot, <span id="stat-warm">3</span> warm</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon red"><i class="fas fa-fire"></i></div>
+                            <div>
+                                <div class="stat-label">Hot Leads</div>
+                                <div class="stat-value" id="stat-hot-leads">5</div>
+                                <div class="stat-subtitle">Ready to contact</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-dollar-sign"></i></div>
+                            <div>
+                                <div class="stat-label">Pipeline Value</div>
+                                <div class="stat-value" id="stat-pipeline">$1,659,000</div>
+                                <div class="stat-subtitle">Active opportunities</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
+                            <div>
+                                <div class="stat-label">Conversion Rate</div>
+                                <div class="stat-value" id="stat-conversion">10.0%</div>
+                                <div class="stat-subtitle">Avg deal: $<span id="stat-avg-deal">435,000</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="card">
+                        <div class="stat-label">Commission This Month</div>
+                        <div style="font-size: 1.875rem; font-weight: 700; color: #16a34a; margin-top: 0.5rem;" id="stat-commission">$52,500</div>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;"><span id="stat-deals">3</span> deals funded</div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Path to $1M</h3>
+                        <div class="progress-container">
+                            <div class="progress-header">
+                                <span class="progress-label">Progress</span>
+                                <span class="progress-value" id="path-percentage">67.30%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="path-fill" style="width: 67.3%;"></div>
+                            </div>
+                            <p class="progress-text">$<span id="path-earned">673,000</span> earned toward $1,000,000 goal</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Pipeline Summary</h3>
+                        <div id="pipeline-summary"></div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Today's Follow-ups</h3>
+                            <a style="color: #4f46e5; font-size: 0.875rem; cursor: pointer;" onclick="navigate('calendar')">View Calendar</a>
+                        </div>
+                        <div id="todays-followups"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="card-title" style="margin-bottom: 1rem;">Recent Activity</h3>
+                        <div id="recent-activity"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leads Page -->
+            <div class="page" id="leads-page">
+                <div class="page-header">
+                    <h1 class="page-title">Leads</h1>
+                    <button class="btn btn-primary" onclick="showAddLeadModal()">
+                        <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add Lead
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="filters">
+                        <div class="filter-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="lead-search" placeholder="Search by business, contact, email, phone..." onkeyup="filterLeads()">
+                        </div>
+                        <div class="filter-select">
+                            <select id="filter-stage" onchange="filterLeads()">
+                                <option value="">All Stages</option>
+                                <option value="new_lead">New Lead</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="qualified">Qualified</option>
+                                <option value="application_sent">Application Sent</option>
+                                <option value="submitted_to_funder">Submitted to Funder</option>
+                                <option value="approved">Approved</option>
+                                <option value="funded">Funded</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                        <div class="filter-select">
+                            <select id="filter-temp" onchange="filterLeads()">
+                                <option value="">All Temperatures</option>
+                                <option value="HOT">Hot</option>
+                                <option value="WARM">Warm</option>
+                                <option value="COLD">Cold</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Business</th>
+                                    <th>Contact</th>
+                                    <th>Revenue</th>
+                                    <th>Score</th>
+                                    <th>Temp</th>
+                                    <th>Stage</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leads-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pipeline Page -->
+            <div class="page" id="pipeline-page">
+                <div class="page-header">
+                    <h1 class="page-title">Pipeline</h1>
+                    <p style="color: #6b7280;">Drag and drop leads between stages</p>
+                </div>
+                
+                <div class="pipeline" id="pipeline-container">
+                </div>
+            </div>
+            
+            <!-- Lead Detail Page -->
+            <div class="page" id="lead-detail-page">
+                <div style="margin-bottom: 1.5rem;">
+                    <a style="color: #6b7280; cursor: pointer;" onclick="navigate('leads')">
+                        <i class="fas fa-arrow-left"></i> Back to Leads
+                    </a>
+                </div>
+                
+                <div class="page-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <h1 class="page-title" id="detail-business-name">Lead Detail</h1>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <select class="form-input" id="detail-temperature" style="width: 120px;" onchange="updateLeadTemperature()">
+                            <option value="HOT">HOT</option>
+                            <option value="WARM">WARM</option>
+                            <option value="COLD">COLD</option>
+                        </select>
+                        <select class="form-input" id="detail-stage" style="width: 180px;" onchange="updateLeadStage()">
+                            <option value="new_lead">New Lead</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="application_sent">Application Sent</option>
+                            <option value="submitted_to_funder">Submitted to Funder</option>
+                            <option value="approved">Approved</option>
+                            <option value="funded">Funded</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #eef2ff; padding: 0.75rem 1.5rem; border-radius: 0.5rem;">
+                        <span style="font-size: 0.875rem; color: #6b7280;">Lead Score: </span>
+                        <span style="font-size: 1.25rem; font-weight: 700; color: #4f46e5;" id="detail-score">-</span>
+                    </div>
+                    <div style="background: #dcfce7; padding: 0.75rem 1.5rem; border-radius: 0.5rem;">
+                        <span style="font-size: 0.875rem; color: #6b7280;">Monthly Revenue: </span>
+                        <span style="font-size: 1.25rem; font-weight: 700; color: #16a34a;" id="detail-revenue">-</span>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab-list">
+                        <div class="tab active" onclick="switchTab('overview')">Overview</div>
+                        <div class="tab" onclick="switchTab('activities')">Activities</div>
+                        <div class="tab" onclick="switchTab('followups')">Follow-ups</div>
+                    </div>
+                </div>
+                
+                <div id="tab-overview" class="tab-content">
+                    <div class="detail-grid">
+                        <div class="card">
+                            <h3>Contact Information</h3>
+                            <div id="detail-contact-info"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Business Information</h3>
+                            <div id="detail-business-info"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-activities" class="tab-content" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Activity History</h3>
+                            <button class="btn btn-primary">Log Activity</button>
+                        </div>
+                        <div id="detail-activities"></div>
+                    </div>
+                </div>
+                
+                <div id="tab-followups" class="tab-content" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Follow-ups</h3>
+                            <button class="btn btn-primary">Schedule Follow-up</button>
+                        </div>
+                        <div id="detail-followups"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Calendar Page -->
+            <div class="page" id="calendar-page">
+                <div class="page-header">
+                    <h1 class="page-title">Calendar</h1>
+                    <div class="calendar-nav">
+                        <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                        <h2 id="calendar-month">March 2025</h2>
+                        <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+                
+                <div class="card">
+                    <h3 class="card-title">Upcoming Follow-ups</h3>
+                    <div id="upcoming-followups"></div>
+                </div>
+            </div>
+            
+            <!-- Commissions Page -->
+            <div class="page" id="commissions-page">
+                <div class="page-header">
+                    <h1 class="page-title">Commissions</h1>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="card">
+                        <div class="stat-label">Total Commission (12mo)</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #16a34a; margin-top: 0.5rem;" id="comm-total">$0</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Total Funded</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4f46e5; margin-top: 0.5rem;" id="comm-funded">$0</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Deals Funded</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem;" id="comm-deals">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Avg Commission Rate</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #8b5cf6; margin-top: 0.5rem;" id="comm-rate">0%</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 class="card-title">Commission History (Last 12 Months)</h3>
+                    <div class="chart-container">
+                        <div class="chart-bar" id="commission-chart"></div>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: #4f46e5; border-radius: 4px;"></div>
+                            <span style="font-size: 0.875rem;">Commission Earned</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: #22c55e; border-radius: 4px;"></div>
+                            <span style="font-size: 0.875rem;">Total Funded (÷1000)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Deals</th>
+                                    <th>Total Funded</th>
+                                    <th>Commission</th>
+                                    <th>Avg Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commissions-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Funders Page -->
+            <div class="page" id="funders-page">
+                <div class="page-header">
+                    <h1 class="page-title">Funders</h1>
+                    <p style="color: #6b7280;">Your funder marketplace</p>
+                </div>
+                
+                <div id="funders-container"></div>
+            </div>
+            
+            <!-- Settings Page -->
+            <div class="page" id="settings-page">
+                <div class="page-header">
+                    <h1 class="page-title">Settings</h1>
+                </div>
+                
+                <div style="display: flex; gap: 1.5rem;">
+                    <div style="width: 256px;">
+                        <nav class="settings-nav">
+                            <a class="settings-nav-item active" onclick="switchSettingsTab('profile')">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            <a class="settings-nav-item" onclick="switchSettingsTab('notifications')">
+                                <i class="fas fa-bell"></i> Notifications
+                            </a>
+                            <a class="settings-nav-item" onclick="switchSettingsTab('commission')">
+                                <i class="fas fa-credit-card"></i> Commission
+                            </a>
+                            <a class="settings-nav-item" onclick="switchSettingsTab('preferences')">
+                                <i class="fas fa-cog"></i> Preferences
+                            </a>
+                        </nav>
+                    </div>
+                    
+                    <div class="card" style="flex: 1;" id="settings-content">
+                        <!-- Settings content rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Add Lead Modal -->
+    <div id="add-lead-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Add New Lead</h3>
+            
+            <div class="form-group">
+                <label class="form-label">Business Name *</label>
+                <input type="text" class="form-input" id="new-business-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Industry</label>
+                <input type="text" class="form-input" id="new-industry">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Contact Name</label>
+                <input type="text" class="form-input" id="new-contact-name">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" id="new-phone">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="new-email">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Monthly Revenue</label>
+                <input type="number" class="form-input" id="new-revenue">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="hideAddLeadModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="addLead()">Add Lead</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>
