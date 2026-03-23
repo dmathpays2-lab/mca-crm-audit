@@ -1,4 +1,4 @@
-// MCA CRM JavaScript Application - PREMIUM VERSION
+// MCA CRM JavaScript Application - PREMIUM VERSION (FIXED)
 // Premium Design System with GSAP animations, custom cursor, and preloader
 
 // ============================================
@@ -9,8 +9,10 @@ function initPreloader() {
     const progressBar = document.getElementById('preloader-progress');
     const progressText = document.getElementById('preloader-text');
     
+    if (!preloader || !progressBar || !progressText) return;
+    
     let progress = 0;
-    const duration = 2000; // 2 seconds
+    const duration = 1500; // 1.5 seconds
     const interval = 20;
     const increment = 100 / (duration / interval);
     
@@ -21,16 +23,16 @@ function initPreloader() {
             progress = 100;
             clearInterval(loadingInterval);
             
-            // Complete loading
             progressBar.style.width = '100%';
             progressText.textContent = 'Loading... 100%';
             
-            // Hide preloader with fade
             setTimeout(() => {
                 preloader.classList.add('hidden');
-                // Initialize animations after preloader
-                initAnimations();
-            }, 500);
+                setTimeout(() => {
+                    initAnimations();
+                    initMobileMenu();
+                }, 100);
+            }, 300);
         } else {
             progressBar.style.width = progress + '%';
             progressText.textContent = 'Loading... ' + Math.round(progress) + '%';
@@ -39,33 +41,42 @@ function initPreloader() {
 }
 
 // ============================================
-// CUSTOM CURSOR
+// CUSTOM CURSOR (Desktop Only)
 // ============================================
 function initCustomCursor() {
     const cursor = document.getElementById('custom-cursor');
     const cursorDot = document.getElementById('custom-cursor-dot');
     
-    // Check if touch device
+    // Check if touch device - hide cursor elements
     if (window.matchMedia('(pointer: coarse)').matches) {
+        if (cursor) cursor.style.display = 'none';
+        if (cursorDot) cursorDot.style.display = 'none';
+        document.body.style.cursor = 'auto';
         return;
     }
+    
+    if (!cursor || !cursorDot) return;
     
     let mouseX = 0, mouseY = 0;
     let cursorX = 0, cursorY = 0;
     let dotX = 0, dotY = 0;
+    let isActive = true;
+    let rafId = null;
     
     document.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
-    });
+        if (!isActive) {
+            isActive = true;
+            animateCursor();
+        }
+    }, { passive: true });
     
-    // Smooth cursor animation
     function animateCursor() {
-        // Laggy follow for outer ring
+        if (!isActive) return;
+        
         cursorX += (mouseX - cursorX) * 0.15;
         cursorY += (mouseY - cursorY) * 0.15;
-        
-        // Quick follow for dot
         dotX += (mouseX - dotX) * 0.35;
         dotY += (mouseY - dotY) * 0.35;
         
@@ -74,171 +85,210 @@ function initCustomCursor() {
         cursorDot.style.left = dotX + 'px';
         cursorDot.style.top = dotY + 'px';
         
-        requestAnimationFrame(animateCursor);
+        rafId = requestAnimationFrame(animateCursor);
     }
     
     animateCursor();
     
-    // Hover effects
-    const hoverElements = document.querySelectorAll('a, button, .nav-item, .stat-card, .card, .lead-card, .pipeline-column, input, select, textarea');
+    // Hover effects using event delegation
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, .nav-item, .stat-card, .card, .lead-card, .pipeline-column, input, select, textarea')) {
+            cursor.classList.add('hover');
+        }
+    }, { passive: true });
     
-    hoverElements.forEach(el => {
-        el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
-        el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
-    });
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('a, button, .nav-item, .stat-card, .card, .lead-card, .pipeline-column, input, select, textarea')) {
+            cursor.classList.remove('hover');
+        }
+    }, { passive: true });
     
-    // Click effect
     document.addEventListener('mousedown', () => cursor.classList.add('clicking'));
     document.addEventListener('mouseup', () => cursor.classList.remove('clicking'));
+    
+    // Pause when tab hidden
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            isActive = false;
+            if (rafId) cancelAnimationFrame(rafId);
+        }
+    });
+}
+
+// ============================================
+// MOBILE MENU
+// ============================================
+function initMobileMenu() {
+    const hamburger = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    
+    if (!hamburger || !sidebar) return;
+    
+    function openMenu() {
+        sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        hamburger.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeMenu() {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        hamburger.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    hamburger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (sidebar.classList.contains('open')) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+    
+    if (overlay) {
+        overlay.addEventListener('click', closeMenu);
+    }
+    
+    // Close menu when clicking nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth <= 1024) {
+                closeMenu();
+            }
+        });
+    });
+    
+    // Close on resize to desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+            closeMenu();
+        }
+    }, { passive: true });
 }
 
 // ============================================
 // GSAP ANIMATIONS
 // ============================================
 function initAnimations() {
-    gsap.registerPlugin(ScrollTrigger);
+    if (typeof gsap === 'undefined') return;
     
-    // Hero parallax effect
-    gsap.to('.hero-section', {
-        scrollTrigger: {
-            trigger: '.hero-section',
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true
-        },
-        y: 100,
-        opacity: 0.5
-    });
-    
-    // Reveal animations for dashboard elements
-    gsap.utils.toArray('.gsap-reveal').forEach((elem, i) => {
-        gsap.fromTo(elem, 
-            { opacity: 0, y: 30 },
-            { 
-                opacity: 1, 
-                y: 0, 
-                duration: 0.8,
-                delay: i * 0.1,
-                ease: 'power3.out'
-            }
-        );
-    });
-    
-    // Left reveal
-    gsap.utils.toArray('.gsap-reveal-left').forEach((elem, i) => {
-        gsap.fromTo(elem, 
-            { opacity: 0, x: -30 },
+    try {
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Hero parallax
+        gsap.to('.hero-section', {
+            scrollTrigger: {
+                trigger: '.hero-section',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            },
+            y: 50,
+            opacity: 0.7
+        });
+        
+        // Reveal animations
+        gsap.utils.toArray('.gsap-reveal').forEach((elem, i) => {
+            gsap.fromTo(elem, 
+                { opacity: 0, y: 20 },
+                { 
+                    opacity: 1, 
+                    y: 0, 
+                    duration: 0.6,
+                    delay: i * 0.08,
+                    ease: 'power2.out'
+                }
+            );
+        });
+        
+        // Left reveal
+        gsap.utils.toArray('.gsap-reveal-left').forEach((elem, i) => {
+            gsap.fromTo(elem, 
+                { opacity: 0, x: -20 },
+                { 
+                    opacity: 1, 
+                    x: 0, 
+                    duration: 0.6,
+                    delay: 0.1 + i * 0.08,
+                    ease: 'power2.out'
+                }
+            );
+        });
+        
+        // Right reveal
+        gsap.utils.toArray('.gsap-reveal-right').forEach((elem, i) => {
+            gsap.fromTo(elem, 
+                { opacity: 0, x: 20 },
+                { 
+                    opacity: 1, 
+                    x: 0, 
+                    duration: 0.6,
+                    delay: 0.15 + i * 0.08,
+                    ease: 'power2.out'
+                }
+            );
+        });
+        
+        // Scale animations
+        gsap.utils.toArray('.gsap-scale').forEach((elem, i) => {
+            gsap.fromTo(elem, 
+                { opacity: 0, scale: 0.95 },
+                { 
+                    opacity: 1, 
+                    scale: 1, 
+                    duration: 0.6,
+                    delay: 0.2 + i * 0.08,
+                    ease: 'back.out(1.4)'
+                }
+            );
+        });
+        
+        // Sidebar items
+        gsap.fromTo('.nav-item', 
+            { opacity: 0, x: -15 },
             { 
                 opacity: 1, 
                 x: 0, 
-                duration: 0.8,
-                delay: 0.2 + i * 0.1,
-                ease: 'power3.out'
+                duration: 0.4,
+                stagger: 0.06,
+                ease: 'power2.out',
+                delay: 0.3
             }
         );
-    });
-    
-    // Right reveal
-    gsap.utils.toArray('.gsap-reveal-right').forEach((elem, i) => {
-        gsap.fromTo(elem, 
-            { opacity: 0, x: 30 },
-            { 
-                opacity: 1, 
-                x: 0, 
-                duration: 0.8,
-                delay: 0.3 + i * 0.1,
-                ease: 'power3.out'
-            }
-        );
-    });
-    
-    // Scale animations
-    gsap.utils.toArray('.gsap-scale').forEach((elem, i) => {
-        gsap.fromTo(elem, 
+        
+        // Logo
+        gsap.fromTo('.logo', 
             { opacity: 0, scale: 0.9 },
             { 
                 opacity: 1, 
                 scale: 1, 
-                duration: 0.8,
-                delay: 0.4 + i * 0.1,
-                ease: 'back.out(1.7)'
+                duration: 0.6,
+                ease: 'back.out(1.4)',
+                delay: 0.2
             }
         );
-    });
-    
-    // Stagger animations for grid children
-    const staggerContainers = document.querySelectorAll('.stagger-children');
-    staggerContainers.forEach(container => {
-        gsap.to(container.children, {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: 'power3.out',
-            delay: 0.3
-        });
-    });
-    
-    // Sidebar items stagger
-    gsap.fromTo('.nav-item', 
-        { opacity: 0, x: -20 },
-        { 
-            opacity: 1, 
-            x: 0, 
-            duration: 0.5,
-            stagger: 0.08,
-            ease: 'power3.out',
-            delay: 0.5
-        }
-    );
-    
-    // Logo animation
-    gsap.fromTo('.logo', 
-        { opacity: 0, scale: 0.8 },
-        { 
-            opacity: 1, 
-            scale: 1, 
-            duration: 0.8,
-            ease: 'back.out(1.7)',
-            delay: 0.3
-        }
-    );
-    
-    // Scroll-triggered animations for cards
-    gsap.utils.toArray('.card').forEach((card, i) => {
-        if (!card.closest('.stagger-children')) {
-            gsap.fromTo(card, 
-                { opacity: 0, y: 20 },
-                {
-                    scrollTrigger: {
-                        trigger: card,
-                        start: 'top 85%',
-                        toggleActions: 'play none none reverse'
-                    },
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.6,
-                    delay: i * 0.05,
-                    ease: 'power3.out'
-                }
-            );
-        }
-    });
+    } catch (e) {
+        console.warn('GSAP animation error:', e);
+    }
 }
 
 // ============================================
 // ANIMATED COUNTERS
 // ============================================
-function animateCounter(element, target, duration = 2000, prefix = '', suffix = '') {
+function animateCounter(element, target, duration = 1500, prefix = '', suffix = '') {
+    if (!element) return;
+    
     const start = 0;
     const startTime = performance.now();
     
     function updateCounter(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function (ease-out-expo)
-        const easeProgress = 1 - Math.pow(2, -10 * progress);
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
         const current = Math.floor(start + (target - start) * easeProgress);
         
         element.textContent = prefix + current.toLocaleString() + suffix;
@@ -254,25 +304,23 @@ function animateCounter(element, target, duration = 2000, prefix = '', suffix = 
 }
 
 function animateCounters() {
-    const counters = document.querySelectorAll('.counter-value[data-target]');
-    
-    counters.forEach(counter => {
+    document.querySelectorAll('.counter-value[data-target]').forEach(counter => {
         const target = parseInt(counter.dataset.target) || 0;
         const suffix = counter.id === 'stat-conversion' ? '%' : '';
-        animateCounter(counter, target, 2000, '', suffix);
+        animateCounter(counter, target, 1500, '', suffix);
     });
 }
 
-// Animate money values
-function animateMoneyValue(element, targetValue, duration = 2000) {
+function animateMoneyValue(element, targetValue, duration = 1500) {
+    if (!element) return;
+    
     const startTime = performance.now();
-    const startValue = 0;
     
     function updateValue(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const easeProgress = 1 - Math.pow(2, -10 * progress);
-        const current = startValue + (targetValue - startValue) * easeProgress;
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const current = targetValue * easeProgress;
         
         element.textContent = '$' + Math.floor(current).toLocaleString();
         
@@ -289,10 +337,8 @@ function animateMoneyValue(element, targetValue, duration = 2000) {
 // ============================================
 // Data Store with localStorage Persistence
 // ============================================
-
 const STORAGE_KEY = 'mca_crm_data';
 
-// Premium Demo Data - 60 leads, $268K pipeline
 const defaultData = {
     leads: generatePremiumLeads(),
     activities: [
@@ -351,7 +397,6 @@ const defaultData = {
     }
 };
 
-// Generate 60 premium leads
 function generatePremiumLeads() {
     const industries = ['Transportation', 'Food & Beverage', 'Construction', 'Retail', 'Technology', 'Automotive', 'Beauty', 'Healthcare', 'Manufacturing', 'Real Estate', 'Professional Services', 'Wholesale'];
     const businessTypes = ['LLC', 'Inc', 'Corp', 'Company', 'Services', 'Solutions', 'Group'];
@@ -360,9 +405,8 @@ function generatePremiumLeads() {
     
     const leads = [];
     
-    // Generate 60 leads
     for (let i = 1; i <= 60; i++) {
-        const revenue = Math.floor(Math.random() * 180000) + 15000; // $15K - $195K monthly
+        const revenue = Math.floor(Math.random() * 180000) + 15000;
         const years = Math.floor(Math.random() * 12) + 1;
         const industry = industries[Math.floor(Math.random() * industries.length)];
         const temp = Math.random() > 0.6 ? 'HOT' : (Math.random() > 0.4 ? 'WARM' : 'COLD');
@@ -402,7 +446,6 @@ function weightedRandom(items, weights) {
     return items[items.length - 1];
 }
 
-// Load data from localStorage or use defaults
 function loadStore() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -415,7 +458,6 @@ function loadStore() {
     return JSON.parse(JSON.stringify(defaultData));
 }
 
-// Save data to localStorage
 function saveStore() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
@@ -424,19 +466,17 @@ function saveStore() {
     }
 }
 
-// Initialize store
 const store = loadStore();
 
 // ============================================
 // Navigation
 // ============================================
-
 let currentLeadId = null;
 let currentMonth = new Date();
 let currentSettingsTab = 'profile';
 
 function navigate(page, params = {}) {
-    // Update sidebar
+    // Update sidebar active state
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.page === page) {
@@ -445,97 +485,113 @@ function navigate(page, params = {}) {
     });
     
     // Hide all pages
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active');
+    });
     
     // Show target page
     const targetPage = document.getElementById(page + '-page');
     if (targetPage) {
         targetPage.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
     // Handle specific pages
-    if (page === 'dashboard') {
-        renderDashboard();
-        // Re-trigger animations for new page
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'leads') {
-        renderLeads();
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'pipeline') {
-        renderPipeline();
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'lead-detail') {
-        currentLeadId = params.id;
-        renderLeadDetail();
-    }
-    if (page === 'calendar') {
-        renderCalendar();
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'commissions') {
-        renderCommissions();
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'funders') {
-        renderFunders();
-        setTimeout(() => initAnimations(), 50);
-    }
-    if (page === 'settings') {
-        renderSettings();
-        setTimeout(() => initAnimations(), 50);
+    switch(page) {
+        case 'dashboard':
+            renderDashboard();
+            break;
+        case 'leads':
+            renderLeads();
+            break;
+        case 'pipeline':
+            renderPipeline();
+            break;
+        case 'lead-detail':
+            currentLeadId = params.id;
+            renderLeadDetail();
+            break;
+        case 'calendar':
+            renderCalendar();
+            break;
+        case 'commissions':
+            renderCommissions();
+            break;
+        case 'funders':
+            renderFunders();
+            break;
+        case 'settings':
+            renderSettings();
+            break;
     }
     
-    // Save state to URL hash
+    // Update URL hash
     window.location.hash = page + (params.id ? '/' + params.id : '');
 }
 
 function navigateToAddLead() {
     navigate('leads');
-    setTimeout(() => {
-        showAddLeadModal();
-    }, 100);
+    setTimeout(() => showAddLeadModal(), 150);
 }
 
 // ============================================
 // Dashboard
 // ============================================
-
 function renderDashboard() {
     const stats = calculateStats();
     
     // Update DOM elements
-    document.getElementById('stat-total-leads').textContent = stats.totalLeads;
-    document.getElementById('stat-total-leads').dataset.target = stats.totalLeads;
-    document.getElementById('stat-hot').textContent = stats.hotLeads;
-    document.getElementById('stat-warm').textContent = stats.warmLeads;
-    document.getElementById('stat-hot-leads').textContent = stats.hotLeads;
-    document.getElementById('stat-hot-leads').dataset.target = stats.hotLeads;
-    document.getElementById('stat-pipeline').textContent = '$' + stats.pipelineValue.toLocaleString();
-    document.getElementById('stat-conversion').textContent = stats.conversionRate + '%';
-    document.getElementById('stat-conversion').dataset.target = parseInt(stats.conversionRate);
-    document.getElementById('stat-avg-deal').textContent = stats.avgDealSize.toLocaleString();
-    document.getElementById('stat-commission').textContent = '$' + stats.commissionThisMonth.toLocaleString();
-    document.getElementById('stat-deals').textContent = stats.dealsThisMonth;
+    const totalLeadsEl = document.getElementById('stat-total-leads');
+    const hotLeadsEl = document.getElementById('stat-hot');
+    const warmLeadsEl = document.getElementById('stat-warm');
+    const statHotLeadsEl = document.getElementById('stat-hot-leads');
+    const pipelineEl = document.getElementById('stat-pipeline');
+    const conversionEl = document.getElementById('stat-conversion');
+    const avgDealEl = document.getElementById('stat-avg-deal');
+    const commissionEl = document.getElementById('stat-commission');
+    const dealsEl = document.getElementById('stat-deals');
+    
+    if (totalLeadsEl) {
+        totalLeadsEl.textContent = stats.totalLeads;
+        totalLeadsEl.dataset.target = stats.totalLeads;
+    }
+    if (hotLeadsEl) hotLeadsEl.textContent = stats.hotLeads;
+    if (warmLeadsEl) warmLeadsEl.textContent = stats.warmLeads;
+    if (statHotLeadsEl) {
+        statHotLeadsEl.textContent = stats.hotLeads;
+        statHotLeadsEl.dataset.target = stats.hotLeads;
+    }
+    if (pipelineEl) pipelineEl.textContent = '$' + stats.pipelineValue.toLocaleString();
+    if (conversionEl) {
+        conversionEl.textContent = stats.conversionRate + '%';
+        conversionEl.dataset.target = parseInt(stats.conversionRate);
+    }
+    if (avgDealEl) avgDealEl.textContent = stats.avgDealSize.toLocaleString();
+    if (commissionEl) commissionEl.textContent = '$' + stats.commissionThisMonth.toLocaleString();
+    if (dealsEl) dealsEl.textContent = stats.dealsThisMonth;
     
     // Path to $1M
     const pathProgress = (stats.totalCommission / store.user.commissionGoal) * 100;
-    document.getElementById('path-percentage').textContent = pathProgress.toFixed(2) + '%';
-    document.getElementById('path-fill').style.width = Math.min(100, pathProgress) + '%';
-    document.getElementById('path-earned').textContent = stats.totalCommission.toLocaleString();
+    const pathPercentEl = document.getElementById('path-percentage');
+    const pathFillEl = document.getElementById('path-fill');
+    const pathEarnedEl = document.getElementById('path-earned');
+    
+    if (pathPercentEl) pathPercentEl.textContent = pathProgress.toFixed(1) + '%';
+    if (pathFillEl) pathFillEl.style.width = Math.min(100, pathProgress) + '%';
+    if (pathEarnedEl) pathEarnedEl.textContent = stats.totalCommission.toLocaleString();
     
     renderPipelineSummary();
     renderTodaysFollowUps();
     renderRecentActivity();
     
-    // Animate counters after a short delay
+    // Animate counters
     setTimeout(() => {
         animateCounters();
-        animateMoneyValue(document.getElementById('stat-pipeline'), stats.pipelineValue, 2000);
-        animateMoneyValue(document.getElementById('stat-commission'), stats.commissionThisMonth, 2000);
-    }, 800);
+        const pipelineValueEl = document.getElementById('stat-pipeline');
+        const commissionThisMonthEl = document.getElementById('stat-commission');
+        if (pipelineValueEl) animateMoneyValue(pipelineValueEl, stats.pipelineValue, 1500);
+        if (commissionThisMonthEl) animateMoneyValue(commissionThisMonthEl, stats.commissionThisMonth, 1500);
+    }, 300);
 }
 
 function calculateStats() {
@@ -590,7 +646,10 @@ function renderPipelineSummary() {
         stageCounts[l.stage] = (stageCounts[l.stage] || 0) + 1;
     });
     
-    const html = stages.map(s => `
+    const container = document.getElementById('pipeline-summary');
+    if (!container) return;
+    
+    container.innerHTML = stages.map(s => `
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
             <div style="display: flex; align-items: center;">
                 <div style="width: 12px; height: 12px; border-radius: 50%; background: ${s.color}; margin-right: 0.5rem;"></div>
@@ -599,8 +658,6 @@ function renderPipelineSummary() {
             <span style="font-weight: 600; color: #fff;">${stageCounts[s.key] || 0}</span>
         </div>
     `).join('');
-    
-    document.getElementById('pipeline-summary').innerHTML = html;
 }
 
 function renderTodaysFollowUps() {
@@ -610,16 +667,18 @@ function renderTodaysFollowUps() {
         return dueDate === today && f.status === 'pending';
     });
     
+    const container = document.getElementById('todays-followups');
+    if (!container) return;
+    
     if (todaysFollowUps.length === 0) {
-        document.getElementById('todays-followups').innerHTML = 
-            '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No follow-ups scheduled for today.</p>';
+        container.innerHTML = '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No follow-ups scheduled for today.</p>';
         return;
     }
     
-    const html = todaysFollowUps.map(f => {
+    container.innerHTML = todaysFollowUps.map(f => {
         const lead = store.leads.find(l => l.id === f.lead_id);
         return `
-            <div style="display: flex; align-items: center; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid rgba(212, 175, 55, 0.1); transition: all 0.3s ease;" onclick="navigate('lead-detail', {id: '${f.lead_id}'})">
+            <div class="follow-up-item" onclick="navigate('lead-detail', {id: '${f.lead_id}'})" style="cursor: pointer;">
                 <i class="fas fa-clock" style="color: var(--gold); margin-right: 0.75rem;"></i>
                 <div style="flex: 1;">
                     <div style="font-weight: 500; color: #fff;">${lead ? lead.business_name : 'Unknown'}</div>
@@ -629,8 +688,6 @@ function renderTodaysFollowUps() {
             </div>
         `;
     }).join('');
-    
-    document.getElementById('todays-followups').innerHTML = html;
 }
 
 function renderRecentActivity() {
@@ -638,17 +695,19 @@ function renderRecentActivity() {
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 5);
     
+    const container = document.getElementById('recent-activity');
+    if (!container) return;
+    
     if (recentActivities.length === 0) {
-        document.getElementById('recent-activity').innerHTML = 
-            '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No recent activity.</p>';
+        container.innerHTML = '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No recent activity.</p>';
         return;
     }
     
-    const html = recentActivities.map(a => {
+    container.innerHTML = recentActivities.map(a => {
         const lead = store.leads.find(l => l.id === a.lead_id);
         const config = getActivityTypeConfig(a.type);
         return `
-            <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid rgba(212, 175, 55, 0.1);" onclick="navigate('lead-detail', {id: '${a.lead_id}'})\">
+            <div class="activity-row" onclick="navigate('lead-detail', {id: '${a.lead_id}'})" style="cursor: pointer;">
                 <div style="width: 32px; height: 32px; background: ${config.color}20; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: ${config.color}; flex-shrink: 0;">
                     <i class="fas fa-${config.icon}" style="font-size: 0.75rem;"></i>
                 </div>
@@ -662,37 +721,39 @@ function renderRecentActivity() {
             </div>
         `;
     }).join('');
-    
-    document.getElementById('recent-activity').innerHTML = html;
 }
 
 // ============================================
 // Leads List
 // ============================================
-
 function renderLeads() {
     filterLeads();
 }
 
 function filterLeads() {
-    const search = document.getElementById('lead-search').value.toLowerCase();
-    const stageFilter = document.getElementById('filter-stage').value;
-    const tempFilter = document.getElementById('filter-temp').value;
+    const searchInput = document.getElementById('lead-search');
+    const stageFilter = document.getElementById('filter-stage');
+    const tempFilter = document.getElementById('filter-temp');
+    
+    const search = searchInput ? searchInput.value.toLowerCase() : '';
+    const stage = stageFilter ? stageFilter.value : '';
+    const temp = tempFilter ? tempFilter.value : '';
     
     let filtered = store.leads.filter(lead => {
         const matchesSearch = !search || 
-            lead.business_name.toLowerCase().includes(search) ||
+            (lead.business_name && lead.business_name.toLowerCase().includes(search)) ||
             (lead.contact_name && lead.contact_name.toLowerCase().includes(search)) ||
             (lead.email && lead.email.toLowerCase().includes(search)) ||
             (lead.phone && lead.phone.includes(search));
         
-        const matchesStage = !stageFilter || lead.stage === stageFilter;
-        const matchesTemp = !tempFilter || lead.temperature === tempFilter;
+        const matchesStage = !stage || lead.stage === stage;
+        const matchesTemp = !temp || lead.temperature === temp;
         
         return matchesSearch && matchesStage && matchesTemp;
     });
     
     const tbody = document.getElementById('leads-table');
+    if (!tbody) return;
     
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -704,7 +765,7 @@ function filterLeads() {
     }
     
     tbody.innerHTML = filtered.map(lead => `
-        <tr style="cursor: pointer;">
+        <tr class="lead-table-row">
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});">
                 <div style="font-weight: 500; color: #fff;">${lead.business_name}</div>
                 <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead.industry || '-'}</div>
@@ -721,22 +782,16 @@ function filterLeads() {
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.temperature.toLowerCase()}">${lead.temperature}</span></td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.stage}">${lead.stage.replace(/_/g, ' ')}</span></td>
             <td>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <div class="lead-actions">
                     <button class="quick-action-btn call" onclick="event.stopPropagation(); showQuickCallModal('${lead.id}');" title="Log Call">
-                        <i class="fas fa-phone"></i> Log
+                        <i class="fas fa-phone"></i> <span class="btn-text">Log</span>
                     </button>
-                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); navigate('lead-detail', {id: '${lead.id}'});" title="Edit">
+                    <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); navigate('lead-detail', {id: '${lead.id}'});" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(220, 38, 38, 0.2); color: #ff6b6b; border-color: rgba(220, 38, 38, 0.3);" onclick="event.stopPropagation(); deleteLead('${lead.id}');" title="Delete">
+                    <button class="btn btn-secondary btn-icon btn-danger" onclick="event.stopPropagation(); deleteLead('${lead.id}');" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
-                    ${lead.phone ? `<a href="tel:${lead.phone}" style="color: #4ade80; padding: 0.25rem;" onclick="event.stopPropagation();" title="Call">
-                        <i class="fas fa-phone"></i>
-                    </a>` : ''}
-                    ${lead.email ? `<a href="mailto:${lead.email}" style="color: var(--gold); padding: 0.25rem;" onclick="event.stopPropagation();" title="Email">
-                        <i class="fas fa-envelope"></i>
-                    </a>` : ''}
                 </div>
             </td>
         </tr>
@@ -744,35 +799,50 @@ function filterLeads() {
 }
 
 function showAddLeadModal() {
-    document.getElementById('add-lead-modal').style.display = 'flex';
+    const modal = document.getElementById('add-lead-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Focus first input
+        setTimeout(() => {
+            const firstInput = document.getElementById('new-business-name');
+            if (firstInput) firstInput.focus();
+        }, 100);
+    }
 }
 
 function hideAddLeadModal() {
-    document.getElementById('add-lead-modal').style.display = 'none';
+    const modal = document.getElementById('add-lead-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
     // Clear form
-    document.getElementById('new-business-name').value = '';
-    document.getElementById('new-industry').value = '';
-    document.getElementById('new-contact-name').value = '';
-    document.getElementById('new-phone').value = '';
-    document.getElementById('new-email').value = '';
-    document.getElementById('new-revenue').value = '';
+    const fields = ['new-business-name', 'new-industry', 'new-contact-name', 'new-phone', 'new-email', 'new-revenue'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 }
 
 function addLead() {
-    const businessName = document.getElementById('new-business-name').value;
+    const businessNameInput = document.getElementById('new-business-name');
+    const businessName = businessNameInput ? businessNameInput.value.trim() : '';
+    
     if (!businessName) {
         alert('Business name is required');
         return;
     }
     
+    const revenueInput = document.getElementById('new-revenue');
+    const revenue = revenueInput ? parseInt(revenueInput.value) || 0 : 0;
+    
     const newLead = {
         id: Date.now().toString(),
         business_name: businessName,
-        industry: document.getElementById('new-industry').value,
-        contact_name: document.getElementById('new-contact-name').value,
-        phone: document.getElementById('new-phone').value,
-        email: document.getElementById('new-email').value,
-        monthly_revenue: parseInt(document.getElementById('new-revenue').value) || 0,
+        industry: document.getElementById('new-industry')?.value || '',
+        contact_name: document.getElementById('new-contact-name')?.value || '',
+        phone: document.getElementById('new-phone')?.value || '',
+        email: document.getElementById('new-email')?.value || '',
+        monthly_revenue: revenue,
         temperature: 'WARM',
         stage: 'new_lead',
         score: Math.floor(Math.random() * 40) + 40,
@@ -804,7 +874,6 @@ function deleteLead(leadId) {
 // ============================================
 // Pipeline
 // ============================================
-
 function renderPipeline() {
     const stages = [
         { id: 'new_lead', name: 'New Lead', color: '#3b82f6' },
@@ -818,6 +887,7 @@ function renderPipeline() {
     ];
     
     const container = document.getElementById('pipeline-container');
+    if (!container) return;
     
     container.innerHTML = stages.map(stage => {
         const stageLeads = store.leads.filter(l => l.stage === stage.id);
@@ -849,7 +919,6 @@ function renderPipeline() {
 // ============================================
 // Lead Detail
 // ============================================
-
 function renderLeadDetail() {
     const lead = store.leads.find(l => l.id === currentLeadId);
     if (!lead) {
@@ -857,64 +926,75 @@ function renderLeadDetail() {
         return;
     }
     
-    document.getElementById('detail-business-name').textContent = lead.business_name;
-    document.getElementById('detail-temperature').value = lead.temperature;
-    document.getElementById('detail-stage').value = lead.stage;
-    document.getElementById('detail-score').textContent = lead.score || '-';
-    document.getElementById('detail-revenue').textContent = lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-';
+    const businessNameEl = document.getElementById('detail-business-name');
+    const tempSelect = document.getElementById('detail-temperature');
+    const stageSelect = document.getElementById('detail-stage');
+    const scoreEl = document.getElementById('detail-score');
+    const revenueEl = document.getElementById('detail-revenue');
+    
+    if (businessNameEl) businessNameEl.textContent = lead.business_name;
+    if (tempSelect) tempSelect.value = lead.temperature;
+    if (stageSelect) stageSelect.value = lead.stage;
+    if (scoreEl) scoreEl.textContent = lead.score || '-';
+    if (revenueEl) revenueEl.textContent = lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-';
     
     // Contact Info
     const contactInfo = document.getElementById('detail-contact-info');
-    contactInfo.innerHTML = `
-        ${lead.contact_name ? `
-        <div class="detail-item">
-            <i class="fas fa-user"></i>
-            <div>
-                <div class="detail-label">Contact</div>
-                <div class="detail-value">${lead.contact_name}</div>
-            </div>
-        </div>` : ''}
-        
-        ${lead.phone ? `
-        <div class="detail-item">
-            <i class="fas fa-phone"></i>
-            <div>
-                <div class="detail-label">Phone</div>
-                <div class="detail-value"><a href="tel:${lead.phone}">${lead.phone}</a></div>
-            </div>
-        </div>` : ''}
-        
-        ${lead.email ? `
-        <div class="detail-item">
-            <i class="fas fa-envelope"></i>
-            <div>
-                <div class="detail-label">Email</div>
-                <div class="detail-value"><a href="mailto:${lead.email}">${lead.email}</a></div>
-            </div>
-        </div>` : ''}
-    `;
+    if (contactInfo) {
+        contactInfo.innerHTML = `
+            ${lead.contact_name ? `
+            <div class="detail-item">
+                <i class="fas fa-user"></i>
+                <div>
+                    <div class="detail-label">Contact</div>
+                    <div class="detail-value">${lead.contact_name}</div>
+                </div>
+            </div>` : ''}
+            
+            ${lead.phone ? `
+            <div class="detail-item">
+                <i class="fas fa-phone"></i>
+                <div>
+                    <div class="detail-label">Phone</div>
+                    <div class="detail-value"><a href="tel:${lead.phone}">${lead.phone}</a></div>
+                </div>
+            </div>` : ''}
+            
+            ${lead.email ? `
+            <div class="detail-item">
+                <i class="fas fa-envelope"></i>
+                <div>
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value"><a href="mailto:${lead.email}">${lead.email}</a></div>
+                </div>
+            </div>` : ''}
+        `;
+    }
     
     // Business Info
-    document.getElementById('detail-business-info').innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-            <div>
-                <div class="detail-label">Years in Business</div>
-                <div class="detail-value">${lead.years_in_business || '-'}</div>
+    const businessInfo = document.getElementById('detail-business-info');
+    if (businessInfo) {
+        businessInfo.innerHTML = `
+            <div class="detail-info-grid">
+                <div>
+                    <div class="detail-label">Years in Business</div>
+                    <div class="detail-value">${lead.years_in_business || '-'}</div>
+                </div>
+                <div>
+                    <div class="detail-label">Industry</div>
+                    <div class="detail-value">${lead.industry || '-'}</div>
+                </div>
+                <div>
+                    <div class="detail-label">Monthly Revenue</div>
+                    <div class="detail-value">${lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-'}</div>
+                </div>
+                <div>
+                    <div class="detail-label">Created</div>
+                    <div class="detail-value">${lead.created_at}</div>
+                </div>
             </div>
-            <div>
-                <div class="detail-label">Industry</div>
-                <div class="detail-value">${lead.industry || '-'}</div>
-            </div>
-            <div>
-                <div class="detail-label">Monthly Revenue</div>
-                <div class="detail-value">${lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-'}</div>
-            </div>
-            <div>
-                <div class="detail-label">Created</div>
-                <div class="detail-value">${lead.created_at}</div>
-            </div>
-        </div>
-    `;
+        `;
+    }
     
     // Activities Timeline
     const leadActivities = store.activities
@@ -922,44 +1002,46 @@ function renderLeadDetail() {
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     const activitiesContainer = document.getElementById('detail-activities');
-    if (leadActivities.length === 0) {
-        activitiesContainer.innerHTML = `
-            <div class="activity-empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <p>No activities yet. Click "Log Activity" to add one.</p>
-            </div>
-        `;
-    } else {
-        activitiesContainer.innerHTML = `
-            <div class="activity-timeline">
-                ${leadActivities.map(a => {
-                    const config = getActivityTypeConfig(a.type);
-                    const hasNotes = a.content && a.content.trim();
-                    return `
-                        <div class="activity-timeline-item">
-                            <div class="activity-timeline-icon ${config.category}">
-                                <i class="fas fa-${config.icon}"></i>
-                            </div>
-                            <div class="activity-timeline-content ${hasNotes ? 'collapsed' : ''}" id="activity-content-${a.id}" onclick="toggleActivityCollapse('${a.id}')">
-                                <div class="activity-timeline-header">
-                                    <div>
-                                        <div class="activity-timeline-title">${a.subject || 'Activity'}</div>
-                                        <div class="activity-timeline-meta">
-                                            <span><i class="fas fa-user"></i> ${a.created_by || 'System'}</span>
-                                            <span><i class="fas fa-clock"></i> ${formatActivityTime(a.created_at)}</span>
-                                        </div>
-                                    </div>
-                                    <span class="activity-timeline-type" style="background: ${config.color}20; color: ${config.color};">
-                                        <i class="fas fa-${config.icon}"></i> ${config.label}
-                                    </span>
+    if (activitiesContainer) {
+        if (leadActivities.length === 0) {
+            activitiesContainer.innerHTML = `
+                <div class="activity-empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No activities yet. Click "Log Activity" to add one.</p>
+                </div>
+            `;
+        } else {
+            activitiesContainer.innerHTML = `
+                <div class="activity-timeline">
+                    ${leadActivities.map(a => {
+                        const config = getActivityTypeConfig(a.type);
+                        const hasNotes = a.content && a.content.trim();
+                        return `
+                            <div class="activity-timeline-item">
+                                <div class="activity-timeline-icon ${config.category}">
+                                    <i class="fas fa-${config.icon}"></i>
                                 </div>
-                                ${hasNotes ? `<div class="activity-notes">${a.content}</div>` : ''}
+                                <div class="activity-timeline-content ${hasNotes ? 'collapsed' : ''}" id="activity-content-${a.id}" onclick="toggleActivityCollapse('${a.id}')">
+                                    <div class="activity-timeline-header">
+                                        <div>
+                                            <div class="activity-timeline-title">${a.subject || 'Activity'}</div>
+                                            <div class="activity-timeline-meta">
+                                                <span><i class="fas fa-user"></i> ${a.created_by || 'System'}</span>
+                                                <span><i class="fas fa-clock"></i> ${formatActivityTime(a.created_at)}</span>
+                                            </div>
+                                        </div>
+                                        <span class="activity-timeline-type" style="background: ${config.color}20; color: ${config.color};">
+                                            <i class="fas fa-${config.icon}"></i> ${config.label}
+                                        </span>
+                                    </div>
+                                    ${hasNotes ? `<div class="activity-notes">${a.content}</div>` : ''}
+                                </div>
                             </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
     }
     
     // Follow-ups
@@ -968,22 +1050,23 @@ function renderLeadDetail() {
         .sort((a, b) => new Date(a.due_at) - new Date(b.due_at));
     
     const followUpsContainer = document.getElementById('detail-followups');
-    if (leadFollowUps.length === 0) {
-        followUpsContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No follow-ups scheduled.</p>';
-    } else {
-        followUpsContainer.innerHTML = leadFollowUps.map(f => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(212, 175, 55, 0.1);">
-                <div>
-                    <div style="font-weight: 500; color: #fff;">${f.title}</div>
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Due: ${new Date(f.due_at).toLocaleString()}</div>
+    if (followUpsContainer) {
+        if (leadFollowUps.length === 0) {
+            followUpsContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No follow-ups scheduled.</p>';
+        } else {
+            followUpsContainer.innerHTML = leadFollowUps.map(f => `
+                <div class="follow-up-card">
+                    <div>
+                        <div style="font-weight: 500; color: #fff;">${f.title}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Due: ${new Date(f.due_at).toLocaleString()}</div>
+                    </div>
+                    <span class="badge badge-${f.status === 'completed' ? 'funded' : 'warm'}">${f.status}</span>
                 </div>
-                <span class="badge badge-${f.status === 'completed' ? 'funded' : 'warm'}">${f.status}</span>
-            </div>
-        `).join('');
+            `).join('');
+        }
     }
 }
 
-// Activity Types Configuration
 const ACTIVITY_TYPES = {
     call_outbound: { label: 'Call - Outbound', icon: 'phone', color: '#2563eb', category: 'call' },
     call_inbound: { label: 'Call - Inbound', icon: 'phone', color: '#16a34a', category: 'call' },
@@ -994,58 +1077,74 @@ const ACTIVITY_TYPES = {
     status_change: { label: 'Status Change', icon: 'exchange-alt', color: '#059669', category: 'status' }
 };
 
-// Activity Modal State
 let currentActivityLeadId = null;
 let quickCallLeadId = null;
-
-// ============================================
-// Activity Functions
-// ============================================
 
 function showActivityModal(leadId = null) {
     currentActivityLeadId = leadId || currentLeadId;
     if (!currentActivityLeadId) return;
     
+    const modal = document.getElementById('activity-modal');
+    if (!modal) return;
+    
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('activity-datetime').value = now.toISOString().slice(0, 16);
     
-    document.getElementById('activity-type').value = 'call_outbound';
-    document.getElementById('activity-subject').value = '';
-    document.getElementById('activity-content').value = '';
-    document.getElementById('activity-followup-check').checked = false;
-    document.getElementById('followup-fields').style.display = 'none';
-    document.getElementById('activity-followup-datetime').value = '';
-    document.getElementById('activity-followup-title').value = '';
+    const datetimeInput = document.getElementById('activity-datetime');
+    if (datetimeInput) datetimeInput.value = now.toISOString().slice(0, 16);
     
+    const typeSelect = document.getElementById('activity-type');
+    if (typeSelect) typeSelect.value = 'call_outbound';
+    
+    const subjectInput = document.getElementById('activity-subject');
+    if (subjectInput) subjectInput.value = '';
+    
+    const contentInput = document.getElementById('activity-content');
+    if (contentInput) contentInput.value = '';
+    
+    const followupCheck = document.getElementById('activity-followup-check');
+    if (followupCheck) {
+        followupCheck.checked = false;
+        toggleFollowUpFields();
+    }
+    
+    const titleEl = document.getElementById('activity-modal-title');
     const lead = store.leads.find(l => l.id === currentActivityLeadId);
-    document.getElementById('activity-modal-title').textContent = lead 
-        ? `Log Activity - ${lead.business_name}` 
-        : 'Log Activity';
+    if (titleEl) {
+        titleEl.textContent = lead ? `Log Activity - ${lead.business_name}` : 'Log Activity';
+    }
     
-    document.getElementById('activity-modal').style.display = 'flex';
+    modal.style.display = 'flex';
+    if (subjectInput) setTimeout(() => subjectInput.focus(), 100);
 }
 
 function hideActivityModal() {
-    document.getElementById('activity-modal').style.display = 'none';
+    const modal = document.getElementById('activity-modal');
+    if (modal) modal.style.display = 'none';
     currentActivityLeadId = null;
 }
 
 function toggleFollowUpFields() {
-    const checked = document.getElementById('activity-followup-check').checked;
-    document.getElementById('followup-fields').style.display = checked ? 'block' : 'none';
+    const check = document.getElementById('activity-followup-check');
+    const fields = document.getElementById('followup-fields');
+    if (!fields) return;
     
-    if (checked) {
+    fields.style.display = check && check.checked ? 'block' : 'none';
+    
+    if (check && check.checked) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
-        document.getElementById('activity-followup-datetime').value = tomorrow.toISOString().slice(0, 16);
+        
+        const datetimeInput = document.getElementById('activity-followup-datetime');
+        if (datetimeInput) datetimeInput.value = tomorrow.toISOString().slice(0, 16);
     }
 }
 
 function updateActivityForm() {
-    const type = document.getElementById('activity-type').value;
+    const typeSelect = document.getElementById('activity-type');
     const subjectInput = document.getElementById('activity-subject');
+    if (!typeSelect || !subjectInput) return;
     
     const defaults = {
         call_outbound: 'Outbound call',
@@ -1058,15 +1157,22 @@ function updateActivityForm() {
     };
     
     if (!subjectInput.value) {
-        subjectInput.value = defaults[type] || '';
+        subjectInput.value = defaults[typeSelect.value] || '';
     }
 }
 
 function saveActivity() {
-    const type = document.getElementById('activity-type').value;
-    const subject = document.getElementById('activity-subject').value.trim();
-    const content = document.getElementById('activity-content').value.trim();
-    const datetime = document.getElementById('activity-datetime').value;
+    const typeSelect = document.getElementById('activity-type');
+    const subjectInput = document.getElementById('activity-subject');
+    const contentInput = document.getElementById('activity-content');
+    const datetimeInput = document.getElementById('activity-datetime');
+    
+    if (!typeSelect || !subjectInput) return;
+    
+    const type = typeSelect.value;
+    const subject = subjectInput.value.trim();
+    const content = contentInput ? contentInput.value.trim() : '';
+    const datetime = datetimeInput ? datetimeInput.value : '';
     
     if (!subject) {
         alert('Please enter a subject/title');
@@ -1085,15 +1191,19 @@ function saveActivity() {
     
     store.activities.push(activity);
     
-    if (document.getElementById('activity-followup-check').checked) {
-        const followupDate = document.getElementById('activity-followup-datetime').value;
-        const followupTitle = document.getElementById('activity-followup-title').value.trim() || 'Follow-up';
+    const followupCheck = document.getElementById('activity-followup-check');
+    if (followupCheck && followupCheck.checked) {
+        const followupDateInput = document.getElementById('activity-followup-datetime');
+        const followupTitleInput = document.getElementById('activity-followup-title');
+        
+        const followupDate = followupDateInput ? followupDateInput.value : '';
+        const followupTitle = followupTitleInput ? followupTitleInput.value.trim() : 'Follow-up';
         
         if (followupDate) {
             store.followUps.push({
                 id: Date.now().toString(),
                 lead_id: currentActivityLeadId,
-                title: followupTitle,
+                title: followupTitle || 'Follow-up',
                 due_at: new Date(followupDate).toISOString(),
                 status: 'pending',
                 related_activity_id: activity.id
@@ -1104,11 +1214,16 @@ function saveActivity() {
     saveStore();
     hideActivityModal();
     
-    if (document.getElementById('lead-detail-page').classList.contains('active')) {
+    // Refresh current page
+    const leadDetailPage = document.getElementById('lead-detail-page');
+    const leadsPage = document.getElementById('leads-page');
+    const dashboardPage = document.getElementById('dashboard-page');
+    
+    if (leadDetailPage && leadDetailPage.classList.contains('active')) {
         renderLeadDetail();
-    } else if (document.getElementById('leads-page').classList.contains('active')) {
+    } else if (leadsPage && leadsPage.classList.contains('active')) {
         renderLeads();
-    } else if (document.getElementById('dashboard-page').classList.contains('active')) {
+    } else if (dashboardPage && dashboardPage.classList.contains('active')) {
         renderDashboard();
     }
 }
@@ -1116,45 +1231,60 @@ function saveActivity() {
 // ============================================
 // Quick Log Call Functions
 // ============================================
-
 function showQuickCallModal(leadId) {
     quickCallLeadId = leadId;
     const lead = store.leads.find(l => l.id === leadId);
     if (!lead) return;
     
-    document.getElementById('quick-call-lead-name').textContent = lead.business_name;
+    const modal = document.getElementById('quick-call-modal');
+    if (!modal) return;
     
-    document.querySelector('input[name="quick-call-type"][value="call_outbound"]').checked = true;
-    document.getElementById('quick-call-outcome').value = 'Connected';
-    document.getElementById('quick-call-notes').value = '';
-    document.getElementById('quick-call-schedule-followup').checked = false;
-    document.getElementById('quick-call-followup-fields').style.display = 'none';
-    document.getElementById('quick-call-followup-date').value = '';
-    document.getElementById('quick-call-followup-title').value = '';
+    const nameEl = document.getElementById('quick-call-lead-name');
+    if (nameEl) nameEl.textContent = lead.business_name;
+    
+    // Reset form
+    const outboundRadio = document.querySelector('input[name="quick-call-type"][value="call_outbound"]');
+    if (outboundRadio) outboundRadio.checked = true;
+    
+    const outcomeSelect = document.getElementById('quick-call-outcome');
+    if (outcomeSelect) outcomeSelect.value = 'Connected';
+    
+    const notesInput = document.getElementById('quick-call-notes');
+    if (notesInput) notesInput.value = '';
+    
+    const followupCheck = document.getElementById('quick-call-schedule-followup');
+    if (followupCheck) {
+        followupCheck.checked = false;
+        const followupFields = document.getElementById('quick-call-followup-fields');
+        if (followupFields) followupFields.style.display = 'none';
+    }
     
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
-    document.getElementById('quick-call-followup-date').value = tomorrow.toISOString().slice(0, 16);
     
-    document.getElementById('quick-call-modal').style.display = 'flex';
+    const followupDateInput = document.getElementById('quick-call-followup-date');
+    if (followupDateInput) followupDateInput.value = tomorrow.toISOString().slice(0, 16);
+    
+    modal.style.display = 'flex';
 }
 
 function hideQuickCallModal() {
-    document.getElementById('quick-call-modal').style.display = 'none';
+    const modal = document.getElementById('quick-call-modal');
+    if (modal) modal.style.display = 'none';
     quickCallLeadId = null;
 }
 
-document.addEventListener('change', function(e) {
-    if (e.target.id === 'quick-call-schedule-followup') {
-        document.getElementById('quick-call-followup-fields').style.display = e.target.checked ? 'block' : 'none';
-    }
-});
-
 function saveQuickCall() {
-    const callType = document.querySelector('input[name="quick-call-type"]:checked').value;
-    const outcome = document.getElementById('quick-call-outcome').value;
-    const notes = document.getElementById('quick-call-notes').value.trim();
+    const callTypeRadio = document.querySelector('input[name="quick-call-type"]:checked');
+    const outcomeSelect = document.getElementById('quick-call-outcome');
+    const notesInput = document.getElementById('quick-call-notes');
+    
+    if (!callTypeRadio || !outcomeSelect) return;
+    
+    const callType = callTypeRadio.value;
+    const outcome = outcomeSelect.value;
+    const notes = notesInput ? notesInput.value.trim() : '';
     
     const activity = {
         id: Date.now().toString(),
@@ -1169,15 +1299,19 @@ function saveQuickCall() {
     
     store.activities.push(activity);
     
-    if (document.getElementById('quick-call-schedule-followup').checked) {
-        const followupDate = document.getElementById('quick-call-followup-date').value;
-        const followupTitle = document.getElementById('quick-call-followup-title').value.trim() || `Follow-up: ${outcome}`;
+    const followupCheck = document.getElementById('quick-call-schedule-followup');
+    if (followupCheck && followupCheck.checked) {
+        const followupDateInput = document.getElementById('quick-call-followup-date');
+        const followupTitleInput = document.getElementById('quick-call-followup-title');
+        
+        const followupDate = followupDateInput ? followupDateInput.value : '';
+        const followupTitle = followupTitleInput ? followupTitleInput.value.trim() : `Follow-up: ${outcome}`;
         
         if (followupDate) {
             store.followUps.push({
                 id: Date.now().toString(),
                 lead_id: quickCallLeadId,
-                title: followupTitle,
+                title: followupTitle || `Follow-up: ${outcome}`,
                 due_at: new Date(followupDate).toISOString(),
                 status: 'pending',
                 related_activity_id: activity.id
@@ -1188,9 +1322,12 @@ function saveQuickCall() {
     saveStore();
     hideQuickCallModal();
     
-    if (document.getElementById('leads-page').classList.contains('active')) {
+    const leadsPage = document.getElementById('leads-page');
+    const leadDetailPage = document.getElementById('lead-detail-page');
+    
+    if (leadsPage && leadsPage.classList.contains('active')) {
         renderLeads();
-    } else if (document.getElementById('lead-detail-page').classList.contains('active')) {
+    } else if (leadDetailPage && leadDetailPage.classList.contains('active')) {
         renderLeadDetail();
     }
 }
@@ -1208,32 +1345,37 @@ function getActivityTypeConfig(type) {
 
 function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.tab:nth-child(${tab === 'overview' ? 1 : tab === 'activities' ? 2 : 3})`).classList.add('active');
+    const tabIndex = tab === 'overview' ? 0 : tab === 'activities' ? 1 : 2;
+    const tabs = document.querySelectorAll('.tab');
+    if (tabs[tabIndex]) tabs[tabIndex].classList.add('active');
     
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.getElementById('tab-' + tab).style.display = 'block';
+    const tabContent = document.getElementById('tab-' + tab);
+    if (tabContent) tabContent.style.display = 'block';
 }
 
 function updateLeadTemperature() {
     const lead = store.leads.find(l => l.id === currentLeadId);
-    if (lead) {
-        lead.temperature = document.getElementById('detail-temperature').value;
+    const tempSelect = document.getElementById('detail-temperature');
+    if (lead && tempSelect) {
+        lead.temperature = tempSelect.value;
         saveStore();
     }
 }
 
 function updateLeadStage() {
     const lead = store.leads.find(l => l.id === currentLeadId);
-    if (lead) {
+    const stageSelect = document.getElementById('detail-stage');
+    if (lead && stageSelect) {
         const oldStage = lead.stage;
-        const newStage = document.getElementById('detail-stage').value;
+        const newStage = stageSelect.value;
         lead.stage = newStage;
         
         store.activities.push({
             id: Date.now().toString(),
             lead_id: currentLeadId,
             type: 'status_change',
-            subject: `Stage Changed`,
+            subject: 'Stage Changed',
             content: `From "${oldStage.replace(/_/g, ' ')}" to "${newStage.replace(/_/g, ' ')}"`,
             created_at: new Date().toISOString(),
             created_by: `${store.user.firstName} ${store.user.lastName}`
@@ -1246,13 +1388,14 @@ function updateLeadStage() {
 // ============================================
 // Calendar
 // ============================================
-
 function renderCalendar() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    document.getElementById('calendar-month').textContent = 
-        currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const monthTitle = document.getElementById('calendar-month');
+    if (monthTitle) {
+        monthTitle.textContent = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -1290,7 +1433,8 @@ function renderCalendar() {
         `;
     }
     
-    document.getElementById('calendar-grid').innerHTML = html;
+    const grid = document.getElementById('calendar-grid');
+    if (grid) grid.innerHTML = html;
     
     const upcoming = store.followUps
         .filter(f => f.status === 'pending')
@@ -1298,13 +1442,15 @@ function renderCalendar() {
         .slice(0, 5);
     
     const upcomingContainer = document.getElementById('upcoming-followups');
+    if (!upcomingContainer) return;
+    
     if (upcoming.length === 0) {
         upcomingContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No upcoming follow-ups.</p>';
     } else {
         upcomingContainer.innerHTML = upcoming.map(f => {
             const lead = store.leads.find(l => l.id === f.lead_id);
             return `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                <div class="follow-up-card" style="cursor: pointer;" onclick="navigate('lead-detail', {id: '${f.lead_id}'})">
                     <div>
                         <div style="font-weight: 500; color: #fff;">${f.title}</div>
                         <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead ? lead.business_name : 'Unknown'} — ${new Date(f.due_at).toLocaleString()}</div>
@@ -1329,20 +1475,26 @@ function nextMonth() {
 // ============================================
 // Commissions
 // ============================================
-
 function renderCommissions() {
     const totalCommission = store.commissions.reduce((sum, c) => sum + c.total_commission, 0);
     const totalFunded = store.commissions.reduce((sum, c) => sum + c.total_funded, 0);
     const totalDeals = store.commissions.reduce((sum, c) => sum + c.deals_funded, 0);
-    const avgRate = store.commissions.reduce((sum, c) => sum + c.avg_commission_rate, 0) / store.commissions.length;
+    const avgRate = store.commissions.length > 0 
+        ? store.commissions.reduce((sum, c) => sum + c.avg_commission_rate, 0) / store.commissions.length 
+        : 0;
     
-    document.getElementById('comm-total').textContent = '$' + totalCommission.toLocaleString();
-    document.getElementById('comm-funded').textContent = '$' + totalFunded.toLocaleString();
-    document.getElementById('comm-deals').textContent = totalDeals;
-    document.getElementById('comm-rate').textContent = avgRate.toFixed(1) + '%';
+    const totalEl = document.getElementById('comm-total');
+    const fundedEl = document.getElementById('comm-funded');
+    const dealsEl = document.getElementById('comm-deals');
+    const rateEl = document.getElementById('comm-rate');
     
-    const maxCommission = Math.max(...store.commissions.map(c => c.total_commission));
-    const maxFunded = Math.max(...store.commissions.map(c => c.total_funded / 1000));
+    if (totalEl) totalEl.textContent = '$' + totalCommission.toLocaleString();
+    if (fundedEl) fundedEl.textContent = '$' + totalFunded.toLocaleString();
+    if (dealsEl) dealsEl.textContent = totalDeals;
+    if (rateEl) rateEl.textContent = avgRate.toFixed(1) + '%';
+    
+    const maxCommission = Math.max(...store.commissions.map(c => c.total_commission), 1);
+    const maxFunded = Math.max(...store.commissions.map(c => c.total_funded / 1000), 1);
     
     const chartHtml = store.commissions.map(c => {
         const commissionHeight = maxCommission > 0 ? (c.total_commission / maxCommission) * 200 : 0;
@@ -1351,31 +1503,34 @@ function renderCommissions() {
         return `
             <div class="bar-group">
                 <div style="display: flex; align-items: flex-end; gap: 2px; height: 200px;">
-                    <div class="bar bar-commission" style="height: ${commissionHeight}px; width: 16px;"></div>
-                    <div class="bar bar-funded" style="height: ${fundedHeight}px; width: 16px;"></div>
+                    <div class="bar bar-commission" style="height: ${commissionHeight}px;"></div>
+                    <div class="bar bar-funded" style="height: ${fundedHeight}px;"></div>
                 </div>
                 <span class="bar-label">${c.month}</span>
             </div>
         `;
     }).join('');
     
-    document.getElementById('commission-chart').innerHTML = chartHtml;
+    const chart = document.getElementById('commission-chart');
+    if (chart) chart.innerHTML = chartHtml;
     
-    document.getElementById('commissions-table').innerHTML = store.commissions.map(c => `
-        <tr>
-            <td>${c.month}</td>
-            <td>${c.deals_funded}</td>
-            <td>$${c.total_funded.toLocaleString()}</td>
-            <td style="color: #4ade80; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
-            <td>${c.avg_commission_rate}%</td>
-        </tr>
-    `).join('');
+    const table = document.getElementById('commissions-table');
+    if (table) {
+        table.innerHTML = store.commissions.map(c => `
+            <tr>
+                <td>${c.month}</td>
+                <td>${c.deals_funded}</td>
+                <td>$${c.total_funded.toLocaleString()}</td>
+                <td style="color: #4ade80; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
+                <td>${c.avg_commission_rate}%</td>
+            </tr>
+        `).join('');
+    }
 }
 
 // ============================================
 // Funders
 // ============================================
-
 function renderFunders() {
     const tierLabels = {
         tier_1_beginner: 'Tier 1 - Beginner Friendly',
@@ -1391,22 +1546,23 @@ function renderFunders() {
     }, {});
     
     const container = document.getElementById('funders-container');
+    if (!container) return;
     
     container.innerHTML = Object.entries(grouped).map(([tier, funders]) => `
-        <div class="card" style="margin-bottom: 1.5rem; overflow: hidden; padding: 0;">
-            <div style="background: linear-gradient(135deg, #D4AF37 0%, #E5C158 100%); padding: 0.875rem 1.5rem;">
-                <h3 style="color: #050D18; font-weight: 600; font-family: 'Cormorant Garamond', serif;">${tierLabels[tier] || tier}</h3>
+        <div class="funder-tier-card">
+            <div class="funder-tier-header">
+                <h3>${tierLabels[tier] || tier}</h3>
             </div>
             <div>
                 ${funders.map(f => `
-                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="funder-item">
+                        <div class="funder-main">
                             <div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 500; color: #fff;">${f.name}</h4>
+                                <div class="funder-name-row">
+                                    <h4>${f.name}</h4>
                                     ${f.is_preferred ? '<span class="badge badge-funded" style="font-size: 0.625rem;">Preferred</span>' : ''}
                                 </div>
-                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 0.75rem;">
+                                <div class="funder-stats">
                                     <div>
                                         <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Deal Range</div>
                                         <div style="font-weight: 500; color: #fff;">$${f.min_deal_amount.toLocaleString()} - $${f.max_deal_amount ? f.max_deal_amount.toLocaleString() : '∞'}</div>
@@ -1425,7 +1581,7 @@ function renderFunders() {
                                     </div>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 1rem;">
+                            <div>
                                 ${f.contact_email ? `<a href="mailto:${f.contact_email}" style="color: var(--gold); font-size: 0.875rem;">Email</a>` : ''}
                             </div>
                         </div>
@@ -1439,7 +1595,6 @@ function renderFunders() {
 // ============================================
 // Settings
 // ============================================
-
 function renderSettings() {
     renderSettingsContent(currentSettingsTab);
 }
@@ -1450,19 +1605,23 @@ function switchSettingsTab(tab) {
     document.querySelectorAll('.settings-nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.settings-nav-item').classList.add('active');
+    
+    // Find the clicked element's parent nav-item
+    const clickedItem = event.target.closest('.settings-nav-item');
+    if (clickedItem) clickedItem.classList.add('active');
     
     renderSettingsContent(tab);
 }
 
 function renderSettingsContent(tab) {
     const container = document.getElementById('settings-content');
+    if (!container) return;
     
     switch(tab) {
         case 'profile':
             container.innerHTML = `
                 <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Profile Settings</h3>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                <div class="settings-form-grid">
                     <div class="form-group">
                         <label class="form-label">First Name</label>
                         <input type="text" class="form-input" id="setting-firstname" value="${store.user.firstName}">
@@ -1484,7 +1643,7 @@ function renderSettingsContent(tab) {
                         <input type="text" class="form-input" id="setting-company" value="${store.user.company}">
                     </div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
+                <div class="settings-actions">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1493,29 +1652,29 @@ function renderSettingsContent(tab) {
         case 'notifications':
             container.innerHTML = `
                 <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Notification Preferences</h3>
-                <div style="space-y: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                <div class="notification-list">
+                    <div class="notification-item">
                         <div>
                             <div style="font-weight: 500; color: #fff;">Email Notifications</div>
                             <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Receive updates via email</div>
                         </div>
                         <input type="checkbox" id="notif-email" ${store.user.notifications.email ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                    <div class="notification-item">
                         <div>
                             <div style="font-weight: 500; color: #fff;">SMS Notifications</div>
                             <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Receive updates via text</div>
                         </div>
                         <input type="checkbox" id="notif-sms" ${store.user.notifications.sms ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                    <div class="notification-item">
                         <div>
                             <div style="font-weight: 500; color: #fff;">Follow-up Reminders</div>
                             <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Get reminded about scheduled follow-ups</div>
                         </div>
                         <input type="checkbox" id="notif-followup" ${store.user.notifications.followUpReminders ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                    <div class="notification-item">
                         <div>
                             <div style="font-weight: 500; color: #fff;">Commission Alerts</div>
                             <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Notify when commissions are paid</div>
@@ -1523,21 +1682,22 @@ function renderSettingsContent(tab) {
                         <input type="checkbox" id="notif-commission" ${store.user.notifications.commissionAlerts ? 'checked' : ''}>
                     </div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
+                <div class="settings-actions">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
             break;
             
         case 'commission':
+            const currentProgress = store.commissions.reduce((sum, c) => sum + c.total_commission, 0);
             container.innerHTML = `
                 <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Commission Settings</h3>
                 <div class="form-group" style="max-width: 400px;">
                     <label class="form-label">Annual Commission Goal</label>
                     <input type="number" class="form-input" id="setting-goal" value="${store.user.commissionGoal}">
-                    <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-top: 0.5rem;">Current progress: $${store.commissions.reduce((sum, c) => sum + c.total_commission, 0).toLocaleString()}</div>
+                    <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-top: 0.5rem;">Current progress: $${currentProgress.toLocaleString()}</div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
+                <div class="settings-actions">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1547,7 +1707,7 @@ function renderSettingsContent(tab) {
             container.innerHTML = `
                 <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Application Preferences</h3>
                 <p style="color: rgba(255,255,255,0.6);">Customize your CRM experience.</p>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
+                <div class="settings-actions">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1568,7 +1728,7 @@ function saveSettings() {
     if (email) store.user.email = email.value;
     if (phone) store.user.phone = phone.value;
     if (company) store.user.company = company.value;
-    if (goal) store.user.commissionGoal = parseInt(goal.value);
+    if (goal) store.user.commissionGoal = parseInt(goal.value) || 1000000;
     
     const notifEmail = document.getElementById('notif-email');
     const notifSms = document.getElementById('notif-sms');
@@ -1585,9 +1745,26 @@ function saveSettings() {
 }
 
 // ============================================
+// Utilities
+// ============================================
+function formatActivityTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hr ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+// ============================================
 // Lead Import from Lead Generator
 // ============================================
-
 const CRM_BRIDGE_KEY = 'mca_crm_bridge';
 
 function checkForLeadGeneratorImports() {
@@ -1667,11 +1844,12 @@ function showImportPreviewModal(result, allBridgeLeads) {
     
     const modal = document.createElement('div');
     modal.id = 'import-preview-modal';
+    modal.className = 'modal-overlay';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(5, 13, 24, 0.9); z-index: 200;
         display: flex; align-items: center; justify-content: center;
-        padding: 2rem; backdrop-filter: blur(8px);
+        padding: 1rem; backdrop-filter: blur(8px);
     `;
     
     const sourceBreakdown = getSourceBreakdown(allBridgeLeads);
@@ -1869,7 +2047,7 @@ function showImportSummary(imported, skipped, errors) {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(5, 13, 24, 0.9); z-index: 200;
         display: flex; align-items: center; justify-content: center;
-        padding: 2rem; backdrop-filter: blur(8px);
+        padding: 1rem; backdrop-filter: blur(8px);
     `;
     
     modal.innerHTML = `
@@ -1908,9 +2086,8 @@ function closeImportSummaryModal() {
 }
 
 // ============================================
-// Initialize
+// Initialize Application
 // ============================================
-
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize preloader
     initPreloader();
@@ -1945,36 +2122,40 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         navigate('dashboard');
     }
+    
+    // Setup global event listeners
+    setupEventListeners();
 });
 
-function formatActivityTime(isoString) {
-    const date = new Date(isoString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+function setupEventListeners() {
+    // Quick call followup checkbox
+    document.addEventListener('change', function(e) {
+        if (e.target.id === 'quick-call-schedule-followup') {
+            const fields = document.getElementById('quick-call-followup-fields');
+            if (fields) fields.style.display = e.target.checked ? 'block' : 'none';
+        }
+    });
     
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hr ago`;
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+    // Modal click-outside-to-close
+    document.addEventListener('click', function(e) {
+        const addLeadModal = document.getElementById('add-lead-modal');
+        const activityModal = document.getElementById('activity-modal');
+        const quickCallModal = document.getElementById('quick-call-modal');
+        
+        if (e.target === addLeadModal) hideAddLeadModal();
+        if (e.target === activityModal) hideActivityModal();
+        if (e.target === quickCallModal) hideQuickCallModal();
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // ESC to close modals
+        if (e.key === 'Escape') {
+            hideAddLeadModal();
+            hideActivityModal();
+            hideQuickCallModal();
+            closeImportPreviewModal();
+            closeImportSummaryModal();
+        }
+    });
 }
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const addLeadModal = document.getElementById('add-lead-modal');
-    const activityModal = document.getElementById('activity-modal');
-    const quickCallModal = document.getElementById('quick-call-modal');
-    
-    if (e.target === addLeadModal) {
-        hideAddLeadModal();
-    }
-    if (e.target === activityModal) {
-        hideActivityModal();
-    }
-    if (e.target === quickCallModal) {
-        hideQuickCallModal();
-    }
-});
