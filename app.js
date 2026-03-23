@@ -338,66 +338,20 @@ function animateMoneyValue(element, targetValue, duration = 1500) {
 // Data Store with localStorage Persistence
 // ============================================
 const STORAGE_KEY = 'mca_crm_data';
+const DEMO_LOADED_KEY = 'mca_crm_demo_loaded';
 
-const defaultData = {
-    leads: generatePremiumLeads(),
-    activities: [
-        { id: '1', lead_id: '1', type: 'call', subject: 'Initial consultation', content: 'Discussed funding needs for expansion', created_at: '2025-03-20T10:00:00' },
-        { id: '2', lead_id: '1', type: 'email', subject: 'Document request', content: 'Sent bank statements and tax returns', created_at: '2025-03-21T14:30:00' },
-        { id: '3', lead_id: '2', type: 'call', subject: 'Follow-up call', content: 'Left voicemail, will try again tomorrow', created_at: '2025-03-22T11:00:00' },
-        { id: '4', lead_id: '3', type: 'email', subject: 'Application submitted', content: 'All documents received, application sent to underwriting', created_at: '2025-03-19T16:00:00' },
-        { id: '5', lead_id: '10', type: 'status_change', subject: 'Status: Funded', content: 'Deal funded for $250,000', created_at: '2025-03-15T09:00:00' },
-        { id: '6', lead_id: '15', type: 'call', subject: 'Discovery call', content: 'Qualified lead, needs $150K for equipment', created_at: '2025-03-21T13:30:00' },
-        { id: '7', lead_id: '22', type: 'meeting', subject: 'In-person meeting', content: 'Reviewed terms, moving to application', created_at: '2025-03-20T15:00:00' },
-        { id: '8', lead_id: '8', type: 'email', subject: 'Approval notification', content: 'Congratulations! Approved for $180K', created_at: '2025-03-22T10:00:00' },
-    ],
-    followUps: [
-        { id: '1', lead_id: '1', title: 'Review bank statements', due_at: '2025-03-24T10:00:00', status: 'pending' },
-        { id: '2', lead_id: '2', title: 'Follow up call', due_at: '2025-03-24T14:00:00', status: 'pending' },
-        { id: '3', lead_id: '5', title: 'Check submission status', due_at: '2025-03-25T11:00:00', status: 'pending' },
-        { id: '4', lead_id: '3', title: 'Collect missing docs', due_at: '2025-03-23T16:00:00', status: 'completed' },
-        { id: '5', lead_id: '12', title: 'Send application link', due_at: '2025-03-24T09:00:00', status: 'pending' },
-        { id: '6', lead_id: '18', title: 'Schedule follow-up', due_at: '2025-03-25T14:30:00', status: 'pending' },
-    ],
-    funders: [
-        { id: '1', name: 'Rapid Capital', tier: 'tier_1_beginner', min_deal_amount: 5000, max_deal_amount: 50000, default_commission_rate: 8, avg_turnaround_hours: 24, is_preferred: true, contact_name: 'James Wilson', contact_email: 'james@rapidcapital.com' },
-        { id: '2', name: 'Progressive Funding', tier: 'tier_1_beginner', min_deal_amount: 10000, max_deal_amount: 75000, default_commission_rate: 9, avg_turnaround_hours: 48, is_preferred: false, contact_name: 'Amy Chen', contact_email: 'amy@progressive.com' },
-        { id: '3', name: 'Summit Financial', tier: 'tier_2_intermediate', min_deal_amount: 25000, max_deal_amount: 150000, default_commission_rate: 10, avg_turnaround_hours: 72, is_preferred: true, contact_name: 'Mark Stevens', contact_email: 'mark@summitfin.com' },
-        { id: '4', name: 'Atlas Capital', tier: 'tier_2_intermediate', min_deal_amount: 30000, max_deal_amount: 200000, default_commission_rate: 11, avg_turnaround_hours: 48, is_preferred: false, contact_name: 'Rachel Green', contact_email: 'rachel@atlascap.com' },
-        { id: '5', name: 'Premier Lending Group', tier: 'tier_3_advanced', min_deal_amount: 50000, max_deal_amount: 500000, default_commission_rate: 12, avg_turnaround_hours: 72, is_preferred: true, contact_name: 'Michael Torres', contact_email: 'michael@premier.com' },
-        { id: '6', name: 'Vanguard Merchant', tier: 'tier_4_premium', min_deal_amount: 100000, max_deal_amount: 2000000, default_commission_rate: 15, avg_turnaround_hours: 96, is_preferred: true, contact_name: 'Sarah Kim', contact_email: 'sarah@vanguard.com' },
-    ],
-    commissions: [
-        { month: 'Apr 2024', deals_funded: 3, total_funded: 285000, total_commission: 28500, avg_commission_rate: 10 },
-        { month: 'May 2024', deals_funded: 4, total_funded: 420000, total_commission: 42000, avg_commission_rate: 10 },
-        { month: 'Jun 2024', deals_funded: 5, total_funded: 580000, total_commission: 58000, avg_commission_rate: 10 },
-        { month: 'Jul 2024', deals_funded: 2, total_funded: 175000, total_commission: 17500, avg_commission_rate: 10 },
-        { month: 'Aug 2024', deals_funded: 6, total_funded: 720000, total_commission: 72000, avg_commission_rate: 10 },
-        { month: 'Sep 2024', deals_funded: 4, total_funded: 460000, total_commission: 46000, avg_commission_rate: 10 },
-        { month: 'Oct 2024', deals_funded: 7, total_funded: 890000, total_commission: 89000, avg_commission_rate: 10 },
-        { month: 'Nov 2024', deals_funded: 5, total_funded: 625000, total_commission: 62500, avg_commission_rate: 10 },
-        { month: 'Dec 2024', deals_funded: 8, total_funded: 950000, total_commission: 95000, avg_commission_rate: 10 },
-        { month: 'Jan 2025', deals_funded: 4, total_funded: 380000, total_commission: 38000, avg_commission_rate: 10 },
-        { month: 'Feb 2025', deals_funded: 6, total_funded: 720000, total_commission: 72000, avg_commission_rate: 10 },
-        { month: 'Mar 2025', deals_funded: 5, total_funded: 925000, total_commission: 92500, avg_commission_rate: 10 },
-    ],
-    user: {
-        firstName: 'Damon',
-        lastName: 'Mathewson',
-        email: 'damon@mathewsfunding.com',
-        phone: '',
-        company: 'Mathews Funding',
-        commissionGoal: 1000000,
-        notifications: {
-            email: true,
-            sms: false,
-            followUpReminders: true,
-            commissionAlerts: true
-        }
-    }
-};
+// Default funder reference data (not user data, so always available)
+const defaultFunders = [
+    { id: '1', name: 'Rapid Capital', tier: 'tier_1_beginner', min_deal_amount: 5000, max_deal_amount: 50000, default_commission_rate: 8, avg_turnaround_hours: 24, is_preferred: true, contact_name: 'James Wilson', contact_email: 'james@rapidcapital.com' },
+    { id: '2', name: 'Progressive Funding', tier: 'tier_1_beginner', min_deal_amount: 10000, max_deal_amount: 75000, default_commission_rate: 9, avg_turnaround_hours: 48, is_preferred: false, contact_name: 'Amy Chen', contact_email: 'amy@progressive.com' },
+    { id: '3', name: 'Summit Financial', tier: 'tier_2_intermediate', min_deal_amount: 25000, max_deal_amount: 150000, default_commission_rate: 10, avg_turnaround_hours: 72, is_preferred: true, contact_name: 'Mark Stevens', contact_email: 'mark@summitfin.com' },
+    { id: '4', name: 'Atlas Capital', tier: 'tier_2_intermediate', min_deal_amount: 30000, max_deal_amount: 200000, default_commission_rate: 11, avg_turnaround_hours: 48, is_preferred: false, contact_name: 'Rachel Green', contact_email: 'rachel@atlascap.com' },
+    { id: '5', name: 'Premier Lending Group', tier: 'tier_3_advanced', min_deal_amount: 50000, max_deal_amount: 500000, default_commission_rate: 12, avg_turnaround_hours: 72, is_preferred: true, contact_name: 'Michael Torres', contact_email: 'michael@premier.com' },
+    { id: '6', name: 'Vanguard Merchant', tier: 'tier_4_premium', min_deal_amount: 100000, max_deal_amount: 2000000, default_commission_rate: 15, avg_turnaround_hours: 96, is_preferred: true, contact_name: 'Sarah Kim', contact_email: 'sarah@vanguard.com' },
+];
 
-function generatePremiumLeads() {
+// Demo data generator function (only called when user requests demo)
+function generateDemoLeads() {
     const industries = ['Transportation', 'Food & Beverage', 'Construction', 'Retail', 'Technology', 'Automotive', 'Beauty', 'Healthcare', 'Manufacturing', 'Real Estate', 'Professional Services', 'Wholesale'];
     const businessTypes = ['LLC', 'Inc', 'Corp', 'Company', 'Services', 'Solutions', 'Group'];
     const contacts = ['John', 'Michael', 'David', 'James', 'Robert', 'William', 'Maria', 'Jennifer', 'Lisa', 'Sarah', 'Jessica', 'Emily'];
@@ -435,6 +389,120 @@ function generatePremiumLeads() {
     
     return leads;
 }
+
+function generateDemoActivities() {
+    return [
+        { id: '1', lead_id: '1', type: 'call', subject: 'Initial consultation', content: 'Discussed funding needs for expansion', created_at: '2025-03-20T10:00:00' },
+        { id: '2', lead_id: '1', type: 'email', subject: 'Document request', content: 'Sent bank statements and tax returns', created_at: '2025-03-21T14:30:00' },
+        { id: '3', lead_id: '2', type: 'call', subject: 'Follow-up call', content: 'Left voicemail, will try again tomorrow', created_at: '2025-03-22T11:00:00' },
+        { id: '4', lead_id: '3', type: 'email', subject: 'Application submitted', content: 'All documents received, application sent to underwriting', created_at: '2025-03-19T16:00:00' },
+        { id: '5', lead_id: '10', type: 'status_change', subject: 'Status: Funded', content: 'Deal funded for $250,000', created_at: '2025-03-15T09:00:00' },
+        { id: '6', lead_id: '15', type: 'call', subject: 'Discovery call', content: 'Qualified lead, needs $150K for equipment', created_at: '2025-03-21T13:30:00' },
+        { id: '7', lead_id: '22', type: 'meeting', subject: 'In-person meeting', content: 'Reviewed terms, moving to application', created_at: '2025-03-20T15:00:00' },
+        { id: '8', lead_id: '8', type: 'email', subject: 'Approval notification', content: 'Congratulations! Approved for $180K', created_at: '2025-03-22T10:00:00' },
+    ];
+}
+
+function generateDemoFollowUps() {
+    return [
+        { id: '1', lead_id: '1', title: 'Review bank statements', due_at: '2025-03-24T10:00:00', status: 'pending' },
+        { id: '2', lead_id: '2', title: 'Follow up call', due_at: '2025-03-24T14:00:00', status: 'pending' },
+        { id: '3', lead_id: '5', title: 'Check submission status', due_at: '2025-03-25T11:00:00', status: 'pending' },
+        { id: '4', lead_id: '3', title: 'Collect missing docs', due_at: '2025-03-23T16:00:00', status: 'completed' },
+        { id: '5', lead_id: '12', title: 'Send application link', due_at: '2025-03-24T09:00:00', status: 'pending' },
+        { id: '6', lead_id: '18', title: 'Schedule follow-up', due_at: '2025-03-25T14:30:00', status: 'pending' },
+    ];
+}
+
+function generateDemoCommissions() {
+    return [
+        { month: 'Apr 2024', deals_funded: 3, total_funded: 285000, total_commission: 28500, avg_commission_rate: 10 },
+        { month: 'May 2024', deals_funded: 4, total_funded: 420000, total_commission: 42000, avg_commission_rate: 10 },
+        { month: 'Jun 2024', deals_funded: 5, total_funded: 580000, total_commission: 58000, avg_commission_rate: 10 },
+        { month: 'Jul 2024', deals_funded: 2, total_funded: 175000, total_commission: 17500, avg_commission_rate: 10 },
+        { month: 'Aug 2024', deals_funded: 6, total_funded: 720000, total_commission: 72000, avg_commission_rate: 10 },
+        { month: 'Sep 2024', deals_funded: 4, total_funded: 460000, total_commission: 46000, avg_commission_rate: 10 },
+        { month: 'Oct 2024', deals_funded: 7, total_funded: 890000, total_commission: 89000, avg_commission_rate: 10 },
+        { month: 'Nov 2024', deals_funded: 5, total_funded: 625000, total_commission: 62500, avg_commission_rate: 10 },
+        { month: 'Dec 2024', deals_funded: 8, total_funded: 950000, total_commission: 95000, avg_commission_rate: 10 },
+        { month: 'Jan 2025', deals_funded: 4, total_funded: 380000, total_commission: 38000, avg_commission_rate: 10 },
+        { month: 'Feb 2025', deals_funded: 6, total_funded: 720000, total_commission: 72000, avg_commission_rate: 10 },
+        { month: 'Mar 2025', deals_funded: 5, total_funded: 925000, total_commission: 92500, avg_commission_rate: 10 },
+    ];
+}
+
+// Load demo data into the store
+function loadDemoData() {
+    if (!confirm('This will load 60 sample leads with demo activities, follow-ups, and commission history. Your current data will be preserved unless you clear it first. Continue?')) {
+        return;
+    }
+    
+    store.leads = generateDemoLeads();
+    store.activities = generateDemoActivities();
+    store.followUps = generateDemoFollowUps();
+    store.commissions = generateDemoCommissions();
+    
+    localStorage.setItem(DEMO_LOADED_KEY, 'true');
+    saveStore();
+    
+    // Refresh current page
+    const currentPage = document.querySelector('.nav-item.active')?.dataset.page || 'dashboard';
+    navigate(currentPage);
+    
+    alert('Demo data loaded successfully! 60 leads, 8 activities, 6 follow-ups, and 12 months of commission history.');
+}
+
+// Clear all user data
+function clearAllData() {
+    if (!confirm('⚠️ WARNING: This will permanently delete ALL your leads, activities, follow-ups, and commission history. This cannot be undone.\n\nAre you sure you want to continue?')) {
+        return;
+    }
+    
+    if (!confirm('Last chance: All your data will be erased. Type "yes" in your mind to confirm.')) {
+        return;
+    }
+    
+    store.leads = [];
+    store.activities = [];
+    store.followUps = [];
+    store.commissions = [];
+    
+    localStorage.removeItem(DEMO_LOADED_KEY);
+    saveStore();
+    
+    // Refresh current page
+    const currentPage = document.querySelector('.nav-item.active')?.dataset.page || 'dashboard';
+    navigate(currentPage);
+    
+    alert('All data has been cleared. Your CRM is now empty and ready for real work.');
+}
+
+// Check if demo data is loaded
+function isDemoDataLoaded() {
+    return localStorage.getItem(DEMO_LOADED_KEY) === 'true';
+}
+
+const defaultData = {
+    leads: [],
+    activities: [],
+    followUps: [],
+    funders: defaultFunders,
+    commissions: [],
+    user: {
+        firstName: 'Damon',
+        lastName: 'Mathewson',
+        email: 'damon@mathewsfunding.com',
+        phone: '',
+        company: 'Mathews Funding',
+        commissionGoal: 1000000,
+        notifications: {
+            email: true,
+            sms: false,
+            followUpReminders: true,
+            commissionAlerts: true
+        }
+    }
+};
 
 function weightedRandom(items, weights) {
     const random = Math.random();
@@ -564,7 +632,7 @@ function renderDashboard() {
     if (pipelineEl) pipelineEl.textContent = '$' + stats.pipelineValue.toLocaleString();
     if (conversionEl) {
         conversionEl.textContent = stats.conversionRate + '%';
-        conversionEl.dataset.target = parseInt(stats.conversionRate);
+        conversionEl.dataset.target = parseFloat(stats.conversionRate);
     }
     if (avgDealEl) avgDealEl.textContent = stats.avgDealSize.toLocaleString();
     if (commissionEl) commissionEl.textContent = '$' + stats.commissionThisMonth.toLocaleString();
@@ -600,7 +668,7 @@ function calculateStats() {
     const warmLeads = store.leads.filter(l => l.temperature === 'WARM').length;
     
     const fundedLeads = store.leads.filter(l => l.stage === 'funded' || l.stage === 'paid');
-    const conversionRate = totalLeads > 0 ? ((fundedLeads.length / totalLeads) * 100).toFixed(1) : 0;
+    const conversionRate = totalLeads > 0 ? ((fundedLeads.length / totalLeads) * 100).toFixed(1) : '0.0';
     
     const pipelineValue = store.leads
         .filter(l => !['funded', 'paid'].includes(l.stage))
@@ -610,7 +678,7 @@ function calculateStats() {
         ? Math.floor(fundedLeads.reduce((sum, l) => sum + (l.monthly_revenue || 0) * 3, 0) / fundedLeads.length)
         : 0;
     
-    const thisMonth = store.commissions[store.commissions.length - 1];
+    const thisMonth = store.commissions.length > 0 ? store.commissions[store.commissions.length - 1] : null;
     const commissionThisMonth = thisMonth ? thisMonth.total_commission : 0;
     const dealsThisMonth = thisMonth ? thisMonth.deals_funded : 0;
     
@@ -1493,38 +1561,52 @@ function renderCommissions() {
     if (dealsEl) dealsEl.textContent = totalDeals;
     if (rateEl) rateEl.textContent = avgRate.toFixed(1) + '%';
     
-    const maxCommission = Math.max(...store.commissions.map(c => c.total_commission), 1);
-    const maxFunded = Math.max(...store.commissions.map(c => c.total_funded / 1000), 1);
-    
-    const chartHtml = store.commissions.map(c => {
-        const commissionHeight = maxCommission > 0 ? (c.total_commission / maxCommission) * 200 : 0;
-        const fundedHeight = maxFunded > 0 ? ((c.total_funded / 1000) / maxFunded) * 200 : 0;
-        
-        return `
-            <div class="bar-group">
-                <div style="display: flex; align-items: flex-end; gap: 2px; height: 200px;">
-                    <div class="bar bar-commission" style="height: ${commissionHeight}px;"></div>
-                    <div class="bar bar-funded" style="height: ${fundedHeight}px;"></div>
-                </div>
-                <span class="bar-label">${c.month}</span>
-            </div>
-        `;
-    }).join('');
-    
     const chart = document.getElementById('commission-chart');
-    if (chart) chart.innerHTML = chartHtml;
+    if (chart) {
+        if (store.commissions.length === 0) {
+            chart.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 2rem;">No commission data yet. Add leads and fund deals to see your earnings history.</div>';
+        } else {
+            const maxCommission = Math.max(...store.commissions.map(c => c.total_commission), 1);
+            const maxFunded = Math.max(...store.commissions.map(c => c.total_funded / 1000), 1);
+            
+            chart.innerHTML = store.commissions.map(c => {
+                const commissionHeight = maxCommission > 0 ? (c.total_commission / maxCommission) * 200 : 0;
+                const fundedHeight = maxFunded > 0 ? ((c.total_funded / 1000) / maxFunded) * 200 : 0;
+                
+                return `
+                    <div class="bar-group">
+                        <div style="display: flex; align-items: flex-end; gap: 2px; height: 200px;">
+                            <div class="bar bar-commission" style="height: ${commissionHeight}px;"></div>
+                            <div class="bar bar-funded" style="height: ${fundedHeight}px;"></div>
+                        </div>
+                        <span class="bar-label">${c.month}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
     
     const table = document.getElementById('commissions-table');
     if (table) {
-        table.innerHTML = store.commissions.map(c => `
-            <tr>
-                <td>${c.month}</td>
-                <td>${c.deals_funded}</td>
-                <td>$${c.total_funded.toLocaleString()}</td>
-                <td style="color: #4ade80; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
-                <td>${c.avg_commission_rate}%</td>
-            </tr>
-        `).join('');
+        if (store.commissions.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                        No commission history yet. Fund your first deal to start tracking earnings!
+                    </td>
+                </tr>
+            `;
+        } else {
+            table.innerHTML = store.commissions.map(c => `
+                <tr>
+                    <td>${c.month}</td>
+                    <td>${c.deals_funded}</td>
+                    <td>$${c.total_funded.toLocaleString()}</td>
+                    <td style="color: #4ade80; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
+                    <td>${c.avg_commission_rate}%</td>
+                </tr>
+            `).join('');
+        }
     }
 }
 
@@ -1699,6 +1781,54 @@ function renderSettingsContent(tab) {
                 </div>
                 <div class="settings-actions">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+                </div>
+            `;
+            break;
+            
+        case 'data':
+            const leadCount = store.leads.length;
+            const activityCount = store.activities.length;
+            const hasData = leadCount > 0 || activityCount > 0 || store.followUps.length > 0;
+            container.innerHTML = `
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Data Management</h3>
+                
+                <div style="background: rgba(5, 13, 24, 0.5); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 1.5rem;">
+                    <h4 style="font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 1rem;">Current Data</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                            <div style="font-size: 1.75rem; font-weight: 700; color: var(--gold); font-family: 'Cormorant Garamond', serif;">${leadCount}</div>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Leads</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                            <div style="font-size: 1.75rem; font-weight: 700; color: var(--gold); font-family: 'Cormorant Garamond', serif;">${activityCount}</div>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Activities</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                            <div style="font-size: 1.75rem; font-weight: 700; color: var(--gold); font-family: 'Cormorant Garamond', serif;">${store.followUps.length}</div>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Follow-ups</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.75rem;">Demo Data</h4>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.875rem; margin-bottom: 1rem;">
+                        Load sample data to explore the CRM features. Includes 60 demo leads, activities, follow-ups, and 12 months of commission history.
+                    </p>
+                    <button class="btn btn-primary" onclick="loadDemoData()" ${hasData ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Load Demo Data
+                    </button>
+                    ${hasData ? '<p style="color: #fbbf24; font-size: 0.75rem; margin-top: 0.5rem;">⚠️ Clear your existing data first to load demo data</p>' : ''}
+                </div>
+
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <h4 style="font-size: 1rem; font-weight: 600; color: #ff6b6b; margin-bottom: 0.75rem;">Danger Zone</h4>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.875rem; margin-bottom: 1rem;">
+                        Permanently delete all your leads, activities, follow-ups, and commission history. This action cannot be undone.
+                    </p>
+                    <button class="btn btn-secondary" onclick="clearAllData()" style="background: rgba(220, 38, 38, 0.2); border-color: rgba(220, 38, 38, 0.5); color: #ff6b6b;">
+                        <i class="fas fa-trash-alt" style="margin-right: 0.5rem;"></i> Clear All Data
+                    </button>
                 </div>
             `;
             break;
