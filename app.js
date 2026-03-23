@@ -1280,62 +1280,322 @@ function importLeadsFromBridge() {
             return;
         }
         
-        const leads = JSON.parse(bridgeData);
-        if (!Array.isArray(leads) || leads.length === 0) {
+        const bridgeLeads = JSON.parse(bridgeData);
+        if (!Array.isArray(bridgeLeads) || bridgeLeads.length === 0) {
             alert('No leads found to import.');
             return;
         }
         
-        // Add leads to CRM
-        let imported = 0;
-        let duplicates = 0;
+        // Categorize leads: new, duplicates by phone, duplicates by name
+        const result = categorizeLeads(bridgeLeads);
         
-        leads.forEach(lead => {
-            // Check for duplicates by phone
-            const exists = store.leads.some(l => 
-                l.phone === lead.phone && lead.phone !== ''
-            );
-            
-            if (exists) {
-                duplicates++;
-            } else {
-                store.leads.unshift(lead);
-                imported++;
-                
-                // Add activity
-                store.activities.unshift({
-                    id: String(Date.now() + Math.random()),
-                    lead_id: lead.id,
-                    type: 'status_change',
-                    subject: 'Lead Imported',
-                    content: `Imported from Lead Generator (${lead.source || 'Unknown'})`,
-                    created_at: new Date().toISOString()
-                });
-            }
-        });
-        
-        saveStore();
-        
-        // Clear the bridge
-        localStorage.removeItem(CRM_BRIDGE_KEY);
-        
-        // Show result
-        alert(`Import Complete!\n\n✅ Imported: ${imported} leads\n⚠️ Duplicates skipped: ${duplicates}\n\nYour leads are now in the CRM.`);
-        
-        // Refresh current view
-        const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
-        if (currentPage) {
-            navigate(currentPage);
-        }
-        
-        // Hide import banner
-        const banner = document.getElementById('import-banner');
-        if (banner) banner.style.display = 'none';
+        // Show preview modal
+        showImportPreviewModal(result, bridgeLeads);
         
     } catch (e) {
         console.error('Import error:', e);
         alert('Error importing leads. Please try again.');
     }
+}
+
+function categorizeLeads(bridgeLeads) {
+    const newLeads = [];
+    const phoneDuplicates = [];
+    const nameDuplicates = [];
+    
+    bridgeLeads.forEach(lead => {
+        // Check for duplicates by phone
+        const phoneDup = store.leads.find(l => 
+            l.phone && lead.phone && l.phone === lead.phone && l.phone !== ''
+        );
+        
+        if (phoneDup) {
+            phoneDuplicates.push({ lead, existing: phoneDup, reason: 'Same phone number' });
+            return;
+        }
+        
+        // Check for duplicates by business name (fuzzy match)
+        const nameDup = store.leads.find(l => {
+            if (!l.business_name || !lead.business_name) return false;
+            const existingName = l.business_name.toLowerCase().trim();
+            const newName = lead.business_name.toLowerCase().trim();
+            return existingName === newName || 
+                   existingName.includes(newName) || 
+                   newName.includes(existingName);
+        });
+        
+        if (nameDup) {
+            nameDuplicates.push({ lead, existing: nameDup, reason: 'Similar business name' });
+            return;
+        }
+        
+        newLeads.push(lead);
+    });
+    
+    return { newLeads, phoneDuplicates, nameDuplicates };
+}
+
+function showImportPreviewModal(result, allBridgeLeads) {
+    const { newLeads, phoneDuplicates, nameDuplicates } = result;
+    const totalDuplicates = phoneDuplicates.length + nameDuplicates.length;
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'import-preview-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 200;
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem;
+    `;
+    
+    const sourceBreakdown = getSourceBreakdown(allBridgeLeads);
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 0.75rem; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="font-size: 1.25rem; font-weight: 600;">📥 Import Preview</h2>
+                <p style="color: #6b7280; margin-top: 0.5rem;">Review leads before importing into your CRM</p>
+            </div>
+            
+            <div style="padding: 1.5rem;">
+                <!-- Summary Stats -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">${newLeads.length}</div>
+                        <div style="font-size: 0.75rem; color: #065f46;">New Leads</div>
+                    </div>
+                    <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #d97706;">${totalDuplicates}</div>
+                        <div style="font-size: 0.75rem; color: #92400e;">Duplicates</div>
+                    </div>
+                    <div style="background: #e0e7ff; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4f46e5;">${calculateAverageScore(newLeads)}</div>
+                        <div style="font-size: 0.75rem; color: #3730a3;">Avg Score</div>
+                    </div>
+                    <div style="background: #fce7f3; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #db2777;">${newLeads.filter(l => l.temperature === 'HOT').length}</div>
+                        <div style="font-size: 0.75rem; color: #be185d;">HOT Leads</div>
+                    </div>
+                </div>
+                
+                <!-- Source Breakdown -->
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Lead Sources:</div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        ${sourceBreakdown.map(s => `
+                            <span style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: white; border-radius: 9999px; border: 1px solid #e5e7eb;">
+                                ${s.source}: ${s.count}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- New Leads Section -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="font-weight: 600;">✅ New Leads to Import</span>
+                        <span style="background: #d1fae5; color: #059669; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${newLeads.length}</span>
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                        ${newLeads.length > 0 ? newLeads.map(lead => `
+                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 500;">${lead.business_name}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">${lead.industry || 'Unknown'} • ${lead.source || 'Manual'}</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 0.875rem; font-weight: 600; color: ${getScoreColor(lead.score)};">${lead.score || '-'}</span>
+                                    <span class="badge badge-${(lead.temperature || 'WARM').toLowerCase()}">${lead.temperature || 'WARM'}</span>
+                                </div>
+                            </div>
+                        `).join('') : '<div style="padding: 1rem; text-align: center; color: #6b7280;">No new leads to import</div>'}
+                    </div>
+                </div>
+                
+                <!-- Duplicates Section (if any) -->
+                ${totalDuplicates > 0 ? `
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="font-weight: 600;">⚠️ Potential Duplicates (Will be skipped)</span>
+                        <span style="background: #fef3c7; color: #d97706; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${totalDuplicates}</span>
+                    </div>
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: #fefce8;">
+                        ${[...phoneDuplicates, ...nameDuplicates].map(dup => `
+                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-weight: 500; color: #92400e;">${dup.lead.business_name}</div>
+                                        <div style="font-size: 0.75rem; color: #a16207;">${dup.reason}</div>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Matches: ${dup.existing.business_name}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div style="padding: 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeImportPreviewModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmImport(${newLeads.length}, ${totalDuplicates})" 
+                    ${newLeads.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                    Import ${newLeads.length} New Leads
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeImportPreviewModal();
+    });
+}
+
+function getSourceBreakdown(leads) {
+    const sources = {};
+    leads.forEach(l => {
+        const source = l.source || 'Manual';
+        sources[source] = (sources[source] || 0) + 1;
+    });
+    return Object.entries(sources).map(([source, count]) => ({ source, count }));
+}
+
+function calculateAverageScore(leads) {
+    if (leads.length === 0) return '-';
+    const avg = leads.reduce((sum, l) => sum + (l.score || 0), 0) / leads.length;
+    return Math.round(avg);
+}
+
+function getScoreColor(score) {
+    if (!score) return '#6b7280';
+    if (score >= 80) return '#dc2626'; // Red for HOT
+    if (score >= 60) return '#d97706'; // Orange for WARM
+    return '#6b7280'; // Gray for COLD
+}
+
+function closeImportPreviewModal() {
+    const modal = document.getElementById('import-preview-modal');
+    if (modal) modal.remove();
+}
+
+function confirmImport(newCount, duplicateCount) {
+    const bridgeData = localStorage.getItem(CRM_BRIDGE_KEY);
+    const bridgeLeads = JSON.parse(bridgeData);
+    
+    // Categorize again to get exact lists
+    const result = categorizeLeads(bridgeLeads);
+    
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+    
+    // Import only new leads
+    result.newLeads.forEach(lead => {
+        try {
+            // Preserve score and source metadata
+            const newLead = {
+                ...lead,
+                // Ensure source is preserved
+                source: lead.source || 'Manual',
+                // Ensure score is preserved
+                score: lead.score || 50,
+                // Add metadata for tracking
+                import_metadata: {
+                    imported_at: new Date().toISOString(),
+                    original_source: lead.source || 'Manual',
+                    import_score: lead.score || 50
+                }
+            };
+            
+            store.leads.unshift(newLead);
+            
+            // Add activity
+            store.activities.unshift({
+                id: String(Date.now() + Math.random()),
+                lead_id: newLead.id,
+                type: 'status_change',
+                subject: 'Lead Imported',
+                content: `Imported from Lead Generator (Source: ${newLead.source}, Score: ${newLead.score})`,
+                created_at: new Date().toISOString()
+            });
+            
+            imported++;
+        } catch (e) {
+            console.error('Error importing lead:', e);
+            errors++;
+        }
+    });
+    
+    skipped = duplicateCount;
+    
+    saveStore();
+    
+    // Clear the bridge
+    localStorage.removeItem(CRM_BRIDGE_KEY);
+    
+    closeImportPreviewModal();
+    
+    // Show detailed summary
+    showImportSummary(imported, skipped, errors);
+    
+    // Hide import banner
+    const banner = document.getElementById('import-banner');
+    if (banner) banner.style.display = 'none';
+    
+    // Refresh current view
+    const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
+    if (currentPage) {
+        navigate(currentPage);
+    }
+}
+
+function showImportSummary(imported, skipped, errors) {
+    const modal = document.createElement('div');
+    modal.id = 'import-summary-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 200;
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 0.75rem; width: 100%; max-width: 500px; text-align: center; padding: 2rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Import Complete!</h2>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Your leads have been successfully imported into the CRM.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem;">
+                    <div style="font-size: 2rem; font-weight: 700; color: #059669;">${imported}</div>
+                    <div style="font-size: 0.75rem; color: #065f46;">Imported</div>
+                </div>
+                <div style="background: ${skipped > 0 ? '#fef3c7' : '#f3f4f6'}; padding: 1rem; border-radius: 0.5rem;">
+                    <div style="font-size: 2rem; font-weight: 700; color: ${skipped > 0 ? '#d97706' : '#9ca3af'};">${skipped}</div>
+                    <div style="font-size: 0.75rem; color: ${skipped > 0 ? '#92400e' : '#6b7280'};">Duplicates Skipped</div>
+                </div>
+                <div style="background: ${errors > 0 ? '#fee2e2' : '#f3f4f6'}; padding: 1rem; border-radius: 0.5rem;">
+                    <div style="font-size: 2rem; font-weight: 700; color: ${errors > 0 ? '#dc2626' : '#9ca3af'};">${errors}</div>
+                    <div style="font-size: 0.75rem; color: ${errors > 0 ? '#991b1b' : '#6b7280'};">Errors</div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="closeImportSummaryModal()" style="width: 100%;">
+                Got it!
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeImportSummaryModal() {
+    const modal = document.getElementById('import-summary-modal');
+    if (modal) modal.remove();
 }
 
 // ============================================
