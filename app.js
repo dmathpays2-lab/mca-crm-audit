@@ -468,6 +468,7 @@ function clearAllData() {
     store.commissions = [];
     
     localStorage.removeItem(DEMO_LOADED_KEY);
+    localStorage.removeItem('mca_crm_data_restored');
     saveStore();
     
     // Refresh current page
@@ -1819,6 +1820,19 @@ function renderSettingsContent(tab) {
                         <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Load Demo Data
                     </button>
                     ${hasData ? '<p style="color: #fbbf24; font-size: 0.75rem; margin-top: 0.5rem;">⚠️ Clear your existing data first to load demo data</p>' : ''}
+                </div>
+
+                <div style="margin-bottom: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <h4 style="font-size: 1rem; font-weight: 600; color: var(--gold); margin-bottom: 0.75rem;">
+                        <i class="fas fa-undo-alt" style="margin-right: 0.5rem;"></i>Restore My Data
+                    </h4>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.875rem; margin-bottom: 1rem;">
+                        Restore your 60 working leads that were previously deleted. This will also restore 8 activities, 6 follow-ups, 6 funders, and 12 months of commission history.
+                    </p>
+                    <button class="btn btn-primary" onclick="restoreMyData()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669;">
+                        <i class="fas fa-magic" style="margin-right: 0.5rem;"></i> Restore My Data
+                    </button>
+                    ${hasRestoredData() ? '<p style="color: #4ade80; font-size: 0.75rem; margin-top: 0.5rem;">✓ Your data has been restored</p>' : ''}
                 </div>
 
                 <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
