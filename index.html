@@ -3,342 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCA Broker CRM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>MCA Broker CRM | Premium</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #f9fafb; color: #111827; }
-        
-        /* Layout */
-        .app { display: flex; min-height: 100vh; }
-        .sidebar { width: 256px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: 100vh; z-index: 50; }
-        .main { flex: 1; margin-left: 256px; padding: 2rem; }
-        
-        /* Sidebar */
-        .logo { display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
-        .logo-icon { width: 32px; height: 32px; background: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; margin-right: 12px; }
-        .logo-text { font-size: 1.25rem; font-weight: 700; }
-        
-        .nav { padding: 1rem; }
-        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.25rem; border-radius: 0.5rem; color: #374151; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-        .nav-item:hover { background: #f3f4f6; }
-        .nav-item.active { background: #eef2ff; color: #4f46e5; }
-        .nav-item i { width: 20px; margin-right: 12px; }
-        
-        .user-section { position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; border-top: 1px solid #e5e7eb; }
-        .user { display: flex; align-items: center; }
-        .user-avatar { width: 40px; height: 40px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
-        .user-info { margin-left: 12px; }
-        .user-name { font-weight: 500; font-size: 0.875rem; }
-        .user-company { font-size: 0.75rem; color: #6b7280; }
-        
-        /* Cards */
-        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .card-title { font-size: 1.125rem; font-weight: 600; }
-        
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
-        .stat-card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stat-header { display: flex; align-items: center; margin-bottom: 0.75rem; }
-        .stat-icon { width: 48px; height: 48px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem; }
-        .stat-icon.blue { background: #3b82f6; color: white; }
-        .stat-icon.red { background: #ef4444; color: white; }
-        .stat-icon.green { background: #22c55e; color: white; }
-        .stat-icon.purple { background: #8b5cf6; color: white; }
-        .stat-label { font-size: 0.875rem; color: #6b7280; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; }
-        .stat-subtitle { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
-        
-        /* Progress Bar */
-        .progress-container { margin-top: 1rem; }
-        .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-        .progress-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #4f46e5; background: #e0e7ff; padding: 0.25rem 0.75rem; border-radius: 9999px; }
-        .progress-value { font-size: 0.75rem; font-weight: 600; color: #4f46e5; }
-        .progress-bar { height: 16px; background: #e0e7ff; border-radius: 9999px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #4f46e5; border-radius: 9999px; transition: width 0.5s; }
-        .progress-text { font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem; }
-        
-        /* Tables */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; }
-        td { padding: 1rem; border-bottom: 1px solid #e5e7eb; }
-        tr:hover { background: #f9fafb; }
-        
-        /* Badges */
-        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .badge-hot { background: #fef2f2; color: #dc2626; }
-        .badge-warm { background: #fffbeb; color: #d97706; }
-        .badge-cold { background: #f3f4f6; color: #4b5563; }
-        .badge-new { background: #dbeafe; color: #2563eb; }
-        .badge-contacted { background: #f3e8ff; color: #9333ea; }
-        .badge-qualified { background: #ccfbf1; color: #0d9488; }
-        .badge-application { background: #e0e7ff; color: #4f46e5; }
-        .badge-submitted { background: #cffafe; color: #0891b2; }
-        .badge-approved { background: #d1fae5; color: #059669; }
-        .badge-funded { background: #dcfce7; color: #16a34a; }
-        .badge-paid { background: #ecfccb; color: #65a30d; }
-        
-        /* Buttons */
-        .btn { display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-primary { background: #4f46e5; color: white; }
-        .btn-primary:hover { background: #4338ca; }
-        .btn-secondary { background: #f3f4f6; color: #374151; }
-        .btn-secondary:hover { background: #e5e7eb; }
-        
-        /* Pipeline */
-        .pipeline { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
-        .pipeline-column { min-width: 280px; background: #f9fafb; border-radius: 0.75rem; }
-        .pipeline-header { padding: 0.75rem 1rem; border-radius: 0.75rem 0.75rem 0 0; color: white; font-weight: 600; display: flex; justify-content: space-between; }
-        .pipeline-count { background: rgba(255,255,255,0.2); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
-        .pipeline-body { padding: 0.75rem; min-height: 200px; }
-        .lead-card { background: white; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; border-left: 4px solid; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; }
-        .lead-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .lead-card.hot { border-left-color: #ef4444; }
-        .lead-card.warm { border-left-color: #f59e0b; }
-        .lead-card.cold { border-left-color: #9ca3af; }
-        .lead-title { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
-        .lead-industry { font-size: 0.75rem; color: #6b7280; }
-        .lead-revenue { font-size: 0.75rem; color: #16a34a; font-weight: 500; margin-top: 0.5rem; }
-        .lead-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
-        
-        /* Forms */
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
-        .form-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; }
-        .form-input:focus { outline: none; border-color: #4f46e5; ring: 2px solid #e0e7ff; }
-        
-        /* Filters */
-        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .filter-input { flex: 1; min-width: 250px; position: relative; }
-        .filter-input i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-        .filter-input input { width: 100%; padding: 0.5rem 0.75rem 0.5rem 2.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; }
-        .filter-select { width: 180px; }
-        .filter-select select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: white; }
-        
-        /* Tabs */
-        .tabs { border-bottom: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
-        .tab-list { display: flex; gap: 2rem; }
-        .tab { padding: 1rem 0; font-size: 0.875rem; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; }
-        .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
-        
-        /* Calendar */
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .calendar-nav { display: flex; gap: 0.5rem; align-items: center; }
-        .calendar-nav button { padding: 0.5rem; border: none; background: #f3f4f6; border-radius: 0.5rem; cursor: pointer; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
-        .calendar-day-header { text-align: center; padding: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #6b7280; }
-        .calendar-day { min-height: 100px; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; }
-        .calendar-day.today { border-color: #4f46e5; background: #eef2ff; }
-        .calendar-day-number { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
-        .calendar-day.today .calendar-day-number { color: #4f46e5; }
-        .calendar-event { font-size: 0.75rem; padding: 0.25rem; background: #fef3c7; border-radius: 0.25rem; margin-top: 0.25rem; }
-        
-        /* Chart */
-        .chart-container { height: 300px; position: relative; }
-        .chart-bar { display: flex; align-items: flex-end; justify-content: center; gap: 0.5rem; height: 250px; padding: 1rem; }
-        .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .bar { width: 100%; max-width: 40px; border-radius: 0.25rem 0.25rem 0 0; position: relative; }
-        .bar-commission { background: #4f46e5; }
-        .bar-funded { background: #22c55e; opacity: 0.7; }
-        .bar-label { font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; transform: rotate(-45deg); white-space: nowrap; }
-        
-        /* Page Header */
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .page-title { font-size: 1.5rem; font-weight: 700; }
-        
-        /* Detail View */
-        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-        .detail-section h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; }
-        .detail-item { display: flex; align-items: flex-start; margin-bottom: 1rem; }
-        .detail-item i { width: 20px; color: #9ca3af; margin-right: 0.75rem; margin-top: 0.25rem; }
-        .detail-label { font-size: 0.75rem; color: #6b7280; }
-        .detail-value { font-weight: 500; }
-        .detail-value a { color: #4f46e5; text-decoration: none; }
-        
-        /* Activity feed */
-        .activity-item { display: flex; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.75rem; }
-        .activity-icon { width: 32px; height: 32px; background: #e0e7ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: #4f46e5; }
-        .activity-content { flex: 1; }
-        .activity-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
-        .activity-type { font-weight: 500; text-transform: capitalize; }
-        .activity-time { font-size: 0.75rem; color: #9ca3af; }
-        
-        /* Activity Timeline Styles */
-        .activity-timeline { position: relative; }
-        .activity-timeline::before {
-            content: '';
-            position: absolute;
-            left: 24px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #e5e7eb;
-        }
-        .activity-timeline-item {
-            position: relative;
-            display: flex;
-            margin-bottom: 1rem;
-            padding-left: 56px;
-        }
-        .activity-timeline-icon {
-            position: absolute;
-            left: 8px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            z-index: 1;
-        }
-        .activity-timeline-icon.call { background: #dbeafe; color: #2563eb; }
-        .activity-timeline-icon.email { background: #fce7f3; color: #db2777; }
-        .activity-timeline-icon.meeting { background: #f3e8ff; color: #9333ea; }
-        .activity-timeline-icon.note { background: #fef3c7; color: #d97706; }
-        .activity-timeline-icon.status { background: #d1fae5; color: #059669; }
-        .activity-timeline-icon.default { background: #e0e7ff; color: #4f46e5; }
-        
-        .activity-timeline-content {
-            flex: 1;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .activity-timeline-content:hover {
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-color: #d1d5db;
-        }
-        .activity-timeline-content.collapsed .activity-notes {
-            display: none;
-        }
-        .activity-timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
-        }
-        .activity-timeline-title {
-            font-weight: 600;
-            color: #111827;
-        }
-        .activity-timeline-type {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            background: #f3f4f6;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-        .activity-timeline-meta {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.75rem;
-            color: #9ca3af;
-            margin-bottom: 0.5rem;
-        }
-        .activity-timeline-meta i {
-            margin-right: 0.25rem;
-        }
-        .activity-notes {
-            font-size: 0.875rem;
-            color: #4b5563;
-            line-height: 1.5;
-            padding-top: 0.5rem;
-            border-top: 1px solid #f3f4f6;
-            margin-top: 0.5rem;
-        }
-        .activity-notes:empty {
-            display: none;
-        }
-        
-        /* Quick Action Buttons */
-        .quick-action-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            gap: 0.375rem;
-        }
-        .quick-action-btn.call {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-        .quick-action-btn.call:hover {
-            background: #bfdbfe;
-        }
-        .quick-action-btn.email {
-            background: #fce7f3;
-            color: #be185d;
-        }
-        .quick-action-btn.email:hover {
-            background: #fbcfe8;
-        }
-        
-        /* Modal enhancements */
-        .modal-overlay {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-        
-        /* Empty state */
-        .activity-empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #9ca3af;
-        }
-        .activity-empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #d1d5db;
-        }
-        
-        /* Hide/show pages */
-        .page { display: none; }
-        .page.active { display: block; }
-        
-        /* Settings sidebar */
-        .settings-nav { background: white; border-radius: 0.75rem; padding: 0.5rem; }
-        .settings-nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.25rem; border-radius: 0.5rem; color: #374151; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-        .settings-nav-item:hover { background: #f3f4f6; }
-        .settings-nav-item.active { background: #eef2ff; color: #4f46e5; }
-        .settings-nav-item i { width: 20px; margin-right: 12px; }
-        
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .detail-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .main { margin-left: 0; }
-            .stats-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Premium Styles -->
+    <link rel="stylesheet" href="premium-styles.css">
 </head>
 <body>
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="preloader-logo">MCA CRM</div>
+        <div class="preloader-progress-container">
+            <div class="preloader-progress-bar" id="preloader-progress"></div>
+        </div>
+        <div class="preloader-progress-text" id="preloader-text">Loading... 0%</div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="custom-cursor"></div>
+    <div class="custom-cursor-dot" id="custom-cursor-dot"></div>
+
+    <!-- Main App -->
     <div class="app">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo">
-                <div class="logo-icon"><i class="fas fa-chart-bar"></i></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="logo gsap-reveal-left">
+                <div class="logo-icon"><i class="fas fa-crown"></i></div>
                 <span class="logo-text">MCA CRM</span>
             </div>
             
@@ -370,7 +66,7 @@
                 <div class="user">
                     <div class="user-avatar">DM</div>
                     <div class="user-info">
-                        <div class="user-name">Damon Mathews</div>
+                        <div class="user-name">Damon Mathewson</div>
                         <div class="user-company">Mathews Funding</div>
                     </div>
                 </div>
@@ -381,40 +77,50 @@
         <main class="main">
             <!-- Dashboard Page -->
             <div class="page active" id="dashboard-page">
+                <!-- Hero Section with Parallax -->
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <div class="hero-subtitle gsap-reveal">Premium Broker CRM</div>
+                        <h1 class="hero-title gsap-reveal">
+                            Welcome back, <span>Damon</span>
+                        </h1>
+                    </div>
+                </div>
+
                 <div class="page-header">
-                    <h1 class="page-title">Dashboard</h1>
-                    <!-- FIXED: Add Lead button now opens the modal directly instead of navigating -->
-                    <button class="btn btn-primary" onclick="navigateToAddLead()">
+                    <h1 class="page-title gsap-reveal">Dashboard Overview</h1>
+                    <button class="btn btn-primary gsap-reveal" onclick="navigateToAddLead()">
                         <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add Lead
                     </button>
                 </div>
                 
                 <!-- Import Banner (hidden by default) -->
-                <div id="import-banner" class="card" style="display: none; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b;">
+                <div id="import-banner" class="card gsap-reveal" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 48px; height: 48px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-download" style="color: white; font-size: 1.25rem;"></i>
+                            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #D4AF37 0%, #E5C158 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);">
+                                <i class="fas fa-download" style="color: #050D18; font-size: 1.25rem;"></i>
                             </div>
                             <div>
-                                <div style="font-weight: 600; color: #92400e; font-size: 1.125rem;">📥 Leads Ready to Import!</div>
-                                <div style="color: #78350f;"><span id="import-count">0</span> leads from Lead Generator waiting to be added</div>
+                                <div style="font-weight: 600; color: #ffffff; font-size: 1.125rem; font-family: 'Cormorant Garamond', serif;">Leads Ready to Import!</div>
+                                <div style="color: rgba(255,255,255,0.7);"><span id="import-count">0</span> leads from Lead Generator waiting to be added</div>
                             </div>
                         </div>
-                        <button class="btn btn-primary" onclick="importLeadsFromBridge()" style="background: #f59e0b; color: white;">
+                        <button class="btn btn-primary" onclick="importLeadsFromBridge()">
                             <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Import Now
                         </button>
                     </div>
                 </div>
                 
-                <div class="stats-grid">
+                <!-- Stats Grid -->
+                <div class="stats-grid stagger-children">
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-icon blue"><i class="fas fa-users"></i></div>
                             <div>
                                 <div class="stat-label">Total Leads</div>
-                                <div class="stat-value" id="stat-total-leads">10</div>
-                                <div class="stat-subtitle"><span id="stat-hot">5</span> hot, <span id="stat-warm">3</span> warm</div>
+                                <div class="stat-value counter-value" id="stat-total-leads" data-target="60">0</div>
+                                <div class="stat-subtitle"><span id="stat-hot">0</span> hot, <span id="stat-warm">0</span> warm</div>
                             </div>
                         </div>
                     </div>
@@ -423,7 +129,7 @@
                             <div class="stat-icon red"><i class="fas fa-fire"></i></div>
                             <div>
                                 <div class="stat-label">Hot Leads</div>
-                                <div class="stat-value" id="stat-hot-leads">5</div>
+                                <div class="stat-value counter-value" id="stat-hot-leads" data-target="24">0</div>
                                 <div class="stat-subtitle">Ready to contact</div>
                             </div>
                         </div>
@@ -433,7 +139,7 @@
                             <div class="stat-icon green"><i class="fas fa-dollar-sign"></i></div>
                             <div>
                                 <div class="stat-label">Pipeline Value</div>
-                                <div class="stat-value" id="stat-pipeline">$1,659,000</div>
+                                <div class="stat-value" id="stat-pipeline">$0</div>
                                 <div class="stat-subtitle">Active opportunities</div>
                             </div>
                         </div>
@@ -443,51 +149,53 @@
                             <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
                             <div>
                                 <div class="stat-label">Conversion Rate</div>
-                                <div class="stat-value" id="stat-conversion">10.0%</div>
-                                <div class="stat-subtitle">Avg deal: $<span id="stat-avg-deal">435,000</span></div>
+                                <div class="stat-value counter-value" id="stat-conversion" data-target="18">0</div>
+                                <div class="stat-subtitle">Avg deal: $<span id="stat-avg-deal">0</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Secondary Stats -->
                 <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="card">
+                    <div class="card gsap-scale">
                         <div class="stat-label">Commission This Month</div>
-                        <div style="font-size: 1.875rem; font-weight: 700; color: #16a34a; margin-top: 0.5rem;" id="stat-commission">$52,500</div>
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;"><span id="stat-deals">3</span> deals funded</div>
+                        <div style="font-size: 2.25rem; font-weight: 700; color: #4ade80; margin-top: 0.5rem; font-family: 'Cormorant Garamond', serif;" id="stat-commission">$0</div>
+                        <div style="font-size: 0.875rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem;"><span id="stat-deals">0</span> deals funded</div>
                     </div>
                     
-                    <div class="card">
-                        <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Path to $1M</h3>
+                    <div class="card gsap-scale">
+                        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Path to $1M</h3>
                         <div class="progress-container">
                             <div class="progress-header">
                                 <span class="progress-label">Progress</span>
-                                <span class="progress-value" id="path-percentage">67.30%</span>
+                                <span class="progress-value" id="path-percentage">0%</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" id="path-fill" style="width: 67.3%;"></div>
+                                <div class="progress-fill" id="path-fill" style="width: 0%;"></div>
                             </div>
-                            <p class="progress-text">$<span id="path-earned">673,000</span> earned toward $1,000,000 goal</p>
+                            <p class="progress-text">$<span id="path-earned">0</span> earned toward $1,000,000 goal</p>
                         </div>
                     </div>
                     
-                    <div class="card">
-                        <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Pipeline Summary</h3>
+                    <div class="card gsap-scale">
+                        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Pipeline Summary</h3>
                         <div id="pipeline-summary"></div>
                     </div>
                 </div>
                 
+                <!-- Dashboard Grid -->
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-                    <div class="card">
+                    <div class="card gsap-reveal-left">
                         <div class="card-header">
                             <h3 class="card-title">Today's Follow-ups</h3>
-                            <a style="color: #4f46e5; font-size: 0.875rem; cursor: pointer;" onclick="navigate('calendar')">View Calendar</a>
+                            <a style="color: var(--gold); font-size: 0.875rem; cursor: pointer;" onclick="navigate('calendar')">View Calendar</a>
                         </div>
                         <div id="todays-followups"></div>
                     </div>
                     
-                    <div class="card">
-                        <h3 class="card-title" style="margin-bottom: 1rem;">Recent Activity</h3>
+                    <div class="card gsap-reveal-right">
+                        <h3 class="card-title" style="margin-bottom: 1rem; color: var(--gold);">Recent Activity</h3>
                         <div id="recent-activity"></div>
                     </div>
                 </div>
@@ -496,13 +204,13 @@
             <!-- Leads Page -->
             <div class="page" id="leads-page">
                 <div class="page-header">
-                    <h1 class="page-title">Leads</h1>
-                    <button class="btn btn-primary" onclick="showAddLeadModal()">
+                    <h1 class="page-title gsap-reveal">Lead Management</h1>
+                    <button class="btn btn-primary gsap-reveal" onclick="showAddLeadModal()">
                         <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add Lead
                     </button>
                 </div>
                 
-                <div class="card">
+                <div class="card gsap-reveal">
                     <div class="filters">
                         <div class="filter-input">
                             <i class="fas fa-search"></i>
@@ -532,7 +240,7 @@
                     </div>
                 </div>
                 
-                <div class="card">
+                <div class="card gsap-reveal">
                     <div class="table-container">
                         <table>
                             <thead>
@@ -554,23 +262,23 @@
             </div>
             
             <!-- Activity Modal -->
-            <div id="activity-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
-                <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
+            <div id="activity-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 13, 24, 0.8); z-index: 100; align-items: center; justify-content: center;">
+                <div style="background: #0A1829; border-radius: 1rem; padding: 2rem; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 600;" id="activity-modal-title">Log Activity</h3>
-                        <button onclick="hideActivityModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280;"><i class="fas fa-times"></i></button>
+                        <h3 style="font-size: 1.5rem; font-weight: 600; font-family: 'Cormorant Garamond', serif; color: #fff;" id="activity-modal-title">Log Activity</h3>
+                        <button onclick="hideActivityModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: rgba(255,255,255,0.6);"><i class="fas fa-times"></i></button>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Activity Type *</label>
                         <select class="form-input" id="activity-type" onchange="updateActivityForm()">
-                            <option value="call_outbound">📞 Call - Outbound</option>
-                            <option value="call_inbound">📞 Call - Inbound</option>
-                            <option value="email_sent">📧 Email - Sent</option>
-                            <option value="email_received">📧 Email - Received</option>
-                            <option value="meeting">🤝 Meeting</option>
-                            <option value="note">📝 Note</option>
-                            <option value="status_change">🔄 Status Change</option>
+                            <option value="call_outbound">Call - Outbound</option>
+                            <option value="call_inbound">Call - Inbound</option>
+                            <option value="email_sent">Email - Sent</option>
+                            <option value="email_received">Email - Received</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="note">Note</option>
+                            <option value="status_change">Status Change</option>
                         </select>
                     </div>
                     
@@ -589,10 +297,10 @@
                         <input type="datetime-local" class="form-input" id="activity-datetime">
                     </div>
                     
-                    <div class="form-group" style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                    <div class="form-group" style="background: rgba(212, 175, 55, 0.1); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; border: 1px solid rgba(212, 175, 55, 0.2);">
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                             <input type="checkbox" id="activity-followup-check" onchange="toggleFollowUpFields()">
-                            <label for="activity-followup-check" style="font-weight: 500; margin: 0;">Set Follow-up Reminder</label>
+                            <label for="activity-followup-check" style="font-weight: 500; margin: 0; color: #fff;">Set Follow-up Reminder</label>
                         </div>
                         <div id="followup-fields" style="display: none; margin-top: 0.75rem;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -616,26 +324,26 @@
             </div>
             
             <!-- Quick Log Call Modal -->
-            <div id="quick-call-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
-                <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 450px;">
+            <div id="quick-call-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 13, 24, 0.8); z-index: 100; align-items: center; justify-content: center;">
+                <div style="background: #0A1829; border-radius: 1rem; padding: 2rem; width: 100%; max-width: 450px; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 600;"><i class="fas fa-phone" style="color: #4f46e5; margin-right: 0.5rem;"></i>Quick Log Call</h3>
-                        <button onclick="hideQuickCallModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280;"><i class="fas fa-times"></i></button>
+                        <h3 style="font-size: 1.5rem; font-weight: 600; font-family: 'Cormorant Garamond', serif; color: #fff;"><i class="fas fa-phone" style="color: var(--gold); margin-right: 0.5rem;"></i>Quick Log Call</h3>
+                        <button onclick="hideQuickCallModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: rgba(255,255,255,0.6);"><i class="fas fa-times"></i></button>
                     </div>
                     
-                    <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <div style="font-size: 0.875rem; color: #6b7280;">Logging call for:</div>
-                        <div style="font-weight: 600; font-size: 1.125rem;" id="quick-call-lead-name">-</div>
+                    <div style="background: rgba(5, 13, 24, 0.5); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.2);">
+                        <div style="font-size: 0.875rem; color: rgba(255,255,255,0.6);">Logging call for:</div>
+                        <div style="font-weight: 600; font-size: 1.125rem; color: #fff;" id="quick-call-lead-name">-</div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Call Type *</label>
                         <div style="display: flex; gap: 1rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #fff;">
                                 <input type="radio" name="quick-call-type" value="call_outbound" checked>
                                 <span>Outbound</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #fff;">
                                 <input type="radio" name="quick-call-type" value="call_inbound">
                                 <span>Inbound</span>
                             </label>
@@ -661,7 +369,7 @@
                     
                     <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
                         <input type="checkbox" id="quick-call-schedule-followup">
-                        <label for="quick-call-schedule-followup" style="margin: 0;">Schedule follow-up</label>
+                        <label for="quick-call-schedule-followup" style="margin: 0; color: #fff;">Schedule follow-up</label>
                     </div>
                     
                     <div id="quick-call-followup-fields" style="display: none; margin-top: 0.5rem;">
@@ -677,13 +385,12 @@
                     </div>
                 </div>
             </div>
-            </div>
             
             <!-- Pipeline Page -->
             <div class="page" id="pipeline-page">
                 <div class="page-header">
-                    <h1 class="page-title">Pipeline</h1>
-                    <p style="color: #6b7280;">Drag and drop leads between stages</p>
+                    <h1 class="page-title gsap-reveal">Sales Pipeline</h1>
+                    <p style="color: rgba(255,255,255,0.6);">Drag and drop leads between stages</p>
                 </div>
                 
                 <div class="pipeline" id="pipeline-container">
@@ -693,7 +400,7 @@
             <!-- Lead Detail Page -->
             <div class="page" id="lead-detail-page">
                 <div style="margin-bottom: 1.5rem;">
-                    <a style="color: #6b7280; cursor: pointer;" onclick="navigate('leads')">
+                    <a style="color: rgba(255,255,255,0.6); cursor: pointer;" onclick="navigate('leads')">
                         <i class="fas fa-arrow-left"></i> Back to Leads
                     </a>
                 </div>
@@ -722,13 +429,13 @@
                 </div>
                 
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: #eef2ff; padding: 0.75rem 1.5rem; border-radius: 0.5rem;">
-                        <span style="font-size: 0.875rem; color: #6b7280;">Lead Score: </span>
-                        <span style="font-size: 1.25rem; font-weight: 700; color: #4f46e5;" id="detail-score">-</span>
+                    <div style="background: rgba(212, 175, 55, 0.1); padding: 1rem 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(212, 175, 55, 0.3);">
+                        <span style="font-size: 0.875rem; color: rgba(255,255,255,0.6);">Lead Score: </span>
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--gold); font-family: 'Cormorant Garamond', serif;" id="detail-score">-</span>
                     </div>
-                    <div style="background: #dcfce7; padding: 0.75rem 1.5rem; border-radius: 0.5rem;">
-                        <span style="font-size: 0.875rem; color: #6b7280;">Monthly Revenue: </span>
-                        <span style="font-size: 1.25rem; font-weight: 700; color: #16a34a;" id="detail-revenue">-</span>
+                    <div style="background: rgba(74, 222, 128, 0.1); padding: 1rem 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(74, 222, 128, 0.3);">
+                        <span style="font-size: 0.875rem; color: rgba(255,255,255,0.6);">Monthly Revenue: </span>
+                        <span style="font-size: 1.5rem; font-weight: 700; color: #4ade80; font-family: 'Cormorant Garamond', serif;" id="detail-revenue">-</span>
                     </div>
                 </div>
                 
@@ -777,19 +484,19 @@
             <!-- Calendar Page -->
             <div class="page" id="calendar-page">
                 <div class="page-header">
-                    <h1 class="page-title">Calendar</h1>
+                    <h1 class="page-title gsap-reveal">Calendar</h1>
                     <div class="calendar-nav">
                         <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
-                        <h2 id="calendar-month">March 2025</h2>
+                        <h2 id="calendar-month" style="font-family: 'Cormorant Garamond', serif; color: #fff; font-size: 1.5rem;">March 2025</h2>
                         <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
                 
-                <div class="card">
+                <div class="card gsap-reveal">
                     <div class="calendar-grid" id="calendar-grid"></div>
                 </div>
                 
-                <div class="card">
+                <div class="card gsap-reveal">
                     <h3 class="card-title">Upcoming Follow-ups</h3>
                     <div id="upcoming-followups"></div>
                 </div>
@@ -798,46 +505,46 @@
             <!-- Commissions Page -->
             <div class="page" id="commissions-page">
                 <div class="page-header">
-                    <h1 class="page-title">Commissions</h1>
+                    <h1 class="page-title gsap-reveal">Commissions</h1>
                 </div>
                 
-                <div class="stats-grid">
+                <div class="stats-grid stagger-children">
                     <div class="card">
                         <div class="stat-label">Total Commission (12mo)</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #16a34a; margin-top: 0.5rem;" id="comm-total">$0</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #4ade80; margin-top: 0.5rem; font-family: 'Cormorant Garamond', serif;" id="comm-total">$0</div>
                     </div>
                     <div class="card">
                         <div class="stat-label">Total Funded</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #4f46e5; margin-top: 0.5rem;" id="comm-funded">$0</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--gold); margin-top: 0.5rem; font-family: 'Cormorant Garamond', serif;" id="comm-funded">$0</div>
                     </div>
                     <div class="card">
                         <div class="stat-label">Deals Funded</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem;" id="comm-deals">0</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #fff; margin-top: 0.5rem; font-family: 'Cormorant Garamond', serif;" id="comm-deals">0</div>
                     </div>
                     <div class="card">
                         <div class="stat-label">Avg Commission Rate</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #8b5cf6; margin-top: 0.5rem;" id="comm-rate">0%</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #c084fc; margin-top: 0.5rem; font-family: 'Cormorant Garamond', serif;" id="comm-rate">0%</div>
                     </div>
                 </div>
                 
-                <div class="card">
-                    <h3 class="card-title">Commission History (Last 12 Months)</h3>
+                <div class="card gsap-reveal">
+                    <h3 class="card-title" style="color: var(--gold);">Commission History (Last 12 Months)</h3>
                     <div class="chart-container">
                         <div class="chart-bar" id="commission-chart"></div>
                     </div>
                     <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <div style="width: 16px; height: 16px; background: #4f46e5; border-radius: 4px;"></div>
-                            <span style="font-size: 0.875rem;">Commission Earned</span>
+                            <div style="width: 16px; height: 16px; background: linear-gradient(135deg, #D4AF37 0%, #E5C158 100%); border-radius: 4px;"></div>
+                            <span style="font-size: 0.875rem; color: rgba(255,255,255,0.8);">Commission Earned</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <div style="width: 16px; height: 16px; background: #22c55e; border-radius: 4px;"></div>
-                            <span style="font-size: 0.875rem;">Total Funded (÷1000)</span>
+                            <div style="width: 16px; height: 16px; background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); border-radius: 4px;"></div>
+                            <span style="font-size: 0.875rem; color: rgba(255,255,255,0.8);">Total Funded (÷1000)</span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card">
+                <div class="card gsap-reveal">
                     <div class="table-container">
                         <table>
                             <thead>
@@ -858,8 +565,8 @@
             <!-- Funders Page -->
             <div class="page" id="funders-page">
                 <div class="page-header">
-                    <h1 class="page-title">Funders</h1>
-                    <p style="color: #6b7280;">Your funder marketplace</p>
+                    <h1 class="page-title gsap-reveal">Funders</h1>
+                    <p style="color: rgba(255,255,255,0.6);">Your funder marketplace</p>
                 </div>
                 
                 <div id="funders-container"></div>
@@ -868,11 +575,11 @@
             <!-- Settings Page -->
             <div class="page" id="settings-page">
                 <div class="page-header">
-                    <h1 class="page-title">Settings</h1>
+                    <h1 class="page-title gsap-reveal">Settings</h1>
                 </div>
                 
                 <div style="display: flex; gap: 1.5rem;">
-                    <div style="width: 256px;">
+                    <div style="width: 280px;">
                         <nav class="settings-nav">
                             <a class="settings-nav-item active" onclick="switchSettingsTab('profile')">
                                 <i class="fas fa-user"></i> Profile
@@ -898,9 +605,9 @@
     </div>
     
     <!-- Add Lead Modal -->
-    <div id="add-lead-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Add New Lead</h3>
+    <div id="add-lead-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 13, 24, 0.8); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: #0A1829; border-radius: 1rem; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: #fff;">Add New Lead</h3>
             
             <div class="form-group">
                 <label class="form-label">Business Name *</label>
@@ -939,6 +646,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

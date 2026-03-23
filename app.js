@@ -1,5 +1,290 @@
-// MCA CRM JavaScript Application - FIXED VERSION
-// Fixes: Data persistence with localStorage, delete lead, calendar year, settings persistence
+// MCA CRM JavaScript Application - PREMIUM VERSION
+// Premium Design System with GSAP animations, custom cursor, and preloader
+
+// ============================================
+// PRELOADER
+// ============================================
+function initPreloader() {
+    const preloader = document.getElementById('preloader');
+    const progressBar = document.getElementById('preloader-progress');
+    const progressText = document.getElementById('preloader-text');
+    
+    let progress = 0;
+    const duration = 2000; // 2 seconds
+    const interval = 20;
+    const increment = 100 / (duration / interval);
+    
+    const loadingInterval = setInterval(() => {
+        progress += increment;
+        
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loadingInterval);
+            
+            // Complete loading
+            progressBar.style.width = '100%';
+            progressText.textContent = 'Loading... 100%';
+            
+            // Hide preloader with fade
+            setTimeout(() => {
+                preloader.classList.add('hidden');
+                // Initialize animations after preloader
+                initAnimations();
+            }, 500);
+        } else {
+            progressBar.style.width = progress + '%';
+            progressText.textContent = 'Loading... ' + Math.round(progress) + '%';
+        }
+    }, interval);
+}
+
+// ============================================
+// CUSTOM CURSOR
+// ============================================
+function initCustomCursor() {
+    const cursor = document.getElementById('custom-cursor');
+    const cursorDot = document.getElementById('custom-cursor-dot');
+    
+    // Check if touch device
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        return;
+    }
+    
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    let dotX = 0, dotY = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+    
+    // Smooth cursor animation
+    function animateCursor() {
+        // Laggy follow for outer ring
+        cursorX += (mouseX - cursorX) * 0.15;
+        cursorY += (mouseY - cursorY) * 0.15;
+        
+        // Quick follow for dot
+        dotX += (mouseX - dotX) * 0.35;
+        dotY += (mouseY - dotY) * 0.35;
+        
+        cursor.style.left = cursorX + 'px';
+        cursor.style.top = cursorY + 'px';
+        cursorDot.style.left = dotX + 'px';
+        cursorDot.style.top = dotY + 'px';
+        
+        requestAnimationFrame(animateCursor);
+    }
+    
+    animateCursor();
+    
+    // Hover effects
+    const hoverElements = document.querySelectorAll('a, button, .nav-item, .stat-card, .card, .lead-card, .pipeline-column, input, select, textarea');
+    
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+    
+    // Click effect
+    document.addEventListener('mousedown', () => cursor.classList.add('clicking'));
+    document.addEventListener('mouseup', () => cursor.classList.remove('clicking'));
+}
+
+// ============================================
+// GSAP ANIMATIONS
+// ============================================
+function initAnimations() {
+    gsap.registerPlugin(ScrollTrigger);
+    
+    // Hero parallax effect
+    gsap.to('.hero-section', {
+        scrollTrigger: {
+            trigger: '.hero-section',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true
+        },
+        y: 100,
+        opacity: 0.5
+    });
+    
+    // Reveal animations for dashboard elements
+    gsap.utils.toArray('.gsap-reveal').forEach((elem, i) => {
+        gsap.fromTo(elem, 
+            { opacity: 0, y: 30 },
+            { 
+                opacity: 1, 
+                y: 0, 
+                duration: 0.8,
+                delay: i * 0.1,
+                ease: 'power3.out'
+            }
+        );
+    });
+    
+    // Left reveal
+    gsap.utils.toArray('.gsap-reveal-left').forEach((elem, i) => {
+        gsap.fromTo(elem, 
+            { opacity: 0, x: -30 },
+            { 
+                opacity: 1, 
+                x: 0, 
+                duration: 0.8,
+                delay: 0.2 + i * 0.1,
+                ease: 'power3.out'
+            }
+        );
+    });
+    
+    // Right reveal
+    gsap.utils.toArray('.gsap-reveal-right').forEach((elem, i) => {
+        gsap.fromTo(elem, 
+            { opacity: 0, x: 30 },
+            { 
+                opacity: 1, 
+                x: 0, 
+                duration: 0.8,
+                delay: 0.3 + i * 0.1,
+                ease: 'power3.out'
+            }
+        );
+    });
+    
+    // Scale animations
+    gsap.utils.toArray('.gsap-scale').forEach((elem, i) => {
+        gsap.fromTo(elem, 
+            { opacity: 0, scale: 0.9 },
+            { 
+                opacity: 1, 
+                scale: 1, 
+                duration: 0.8,
+                delay: 0.4 + i * 0.1,
+                ease: 'back.out(1.7)'
+            }
+        );
+    });
+    
+    // Stagger animations for grid children
+    const staggerContainers = document.querySelectorAll('.stagger-children');
+    staggerContainers.forEach(container => {
+        gsap.to(container.children, {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'power3.out',
+            delay: 0.3
+        });
+    });
+    
+    // Sidebar items stagger
+    gsap.fromTo('.nav-item', 
+        { opacity: 0, x: -20 },
+        { 
+            opacity: 1, 
+            x: 0, 
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power3.out',
+            delay: 0.5
+        }
+    );
+    
+    // Logo animation
+    gsap.fromTo('.logo', 
+        { opacity: 0, scale: 0.8 },
+        { 
+            opacity: 1, 
+            scale: 1, 
+            duration: 0.8,
+            ease: 'back.out(1.7)',
+            delay: 0.3
+        }
+    );
+    
+    // Scroll-triggered animations for cards
+    gsap.utils.toArray('.card').forEach((card, i) => {
+        if (!card.closest('.stagger-children')) {
+            gsap.fromTo(card, 
+                { opacity: 0, y: 20 },
+                {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: 'top 85%',
+                        toggleActions: 'play none none reverse'
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    delay: i * 0.05,
+                    ease: 'power3.out'
+                }
+            );
+        }
+    });
+}
+
+// ============================================
+// ANIMATED COUNTERS
+// ============================================
+function animateCounter(element, target, duration = 2000, prefix = '', suffix = '') {
+    const start = 0;
+    const startTime = performance.now();
+    
+    function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out-expo)
+        const easeProgress = 1 - Math.pow(2, -10 * progress);
+        const current = Math.floor(start + (target - start) * easeProgress);
+        
+        element.textContent = prefix + current.toLocaleString() + suffix;
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        } else {
+            element.textContent = prefix + target.toLocaleString() + suffix;
+        }
+    }
+    
+    requestAnimationFrame(updateCounter);
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.counter-value[data-target]');
+    
+    counters.forEach(counter => {
+        const target = parseInt(counter.dataset.target) || 0;
+        const suffix = counter.id === 'stat-conversion' ? '%' : '';
+        animateCounter(counter, target, 2000, '', suffix);
+    });
+}
+
+// Animate money values
+function animateMoneyValue(element, targetValue, duration = 2000) {
+    const startTime = performance.now();
+    const startValue = 0;
+    
+    function updateValue(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(2, -10 * progress);
+        const current = startValue + (targetValue - startValue) * easeProgress;
+        
+        element.textContent = '$' + Math.floor(current).toLocaleString();
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateValue);
+        } else {
+            element.textContent = '$' + targetValue.toLocaleString();
+        }
+    }
+    
+    requestAnimationFrame(updateValue);
+}
 
 // ============================================
 // Data Store with localStorage Persistence
@@ -7,31 +292,26 @@
 
 const STORAGE_KEY = 'mca_crm_data';
 
+// Premium Demo Data - 60 leads, $268K pipeline
 const defaultData = {
-    leads: [
-        { id: '1', business_name: 'ABC Trucking LLC', industry: 'Transportation', contact_name: 'John Smith', phone: '(555) 123-4567', email: 'john@abctrucking.com', monthly_revenue: 85000, years_in_business: 5, score: 85, temperature: 'HOT', stage: 'qualified', created_at: '2025-03-10' },
-        { id: '2', business_name: 'Sunrise Restaurant', industry: 'Food & Beverage', contact_name: 'Maria Garcia', phone: '(555) 234-5678', email: 'maria@sunriserest.com', monthly_revenue: 42000, years_in_business: 3, score: 72, temperature: 'WARM', stage: 'contacted', created_at: '2025-03-12' },
-        { id: '3', business_name: 'Metro Construction', industry: 'Construction', contact_name: 'David Chen', phone: '(555) 345-6789', email: 'david@metroconst.com', monthly_revenue: 120000, years_in_business: 8, score: 91, temperature: 'HOT', stage: 'application_sent', created_at: '2025-03-08' },
-        { id: '4', business_name: 'Coastal Retail Co', industry: 'Retail', contact_name: 'Sarah Johnson', phone: '(555) 456-7890', email: 'sarah@coastalretail.com', monthly_revenue: 28000, years_in_business: 2, score: 45, temperature: 'COLD', stage: 'new_lead', created_at: '2025-03-14' },
-        { id: '5', business_name: 'TechFlow Solutions', industry: 'Technology', contact_name: 'Michael Park', phone: '(555) 567-8901', email: 'michael@techflow.com', monthly_revenue: 95000, years_in_business: 4, score: 88, temperature: 'HOT', stage: 'submitted_to_funder', created_at: '2025-03-05' },
-        { id: '6', business_name: 'Premium Auto Repair', industry: 'Automotive', contact_name: 'Robert Wilson', phone: '(555) 678-9012', email: 'robert@premiumauto.com', monthly_revenue: 55000, years_in_business: 6, score: 68, temperature: 'WARM', stage: 'contacted', created_at: '2025-03-11' },
-        { id: '7', business_name: 'Elite Salon & Spa', industry: 'Beauty', contact_name: 'Jennifer Lee', phone: '(555) 789-0123', email: 'jennifer@elitesalon.com', monthly_revenue: 32000, years_in_business: 4, score: 58, temperature: 'WARM', stage: 'qualified', created_at: '2025-03-09' },
-        { id: '8', business_name: 'Summit Roofing', industry: 'Construction', contact_name: 'Chris Brown', phone: '(555) 890-1234', email: 'chris@summitroofing.com', monthly_revenue: 78000, years_in_business: 7, score: 82, temperature: 'HOT', stage: 'approved', created_at: '2025-02-28' },
-        { id: '9', business_name: 'Green Lawn Care', industry: 'Landscaping', contact_name: 'Tom Davis', phone: '(555) 901-2345', email: 'tom@greenlawn.com', monthly_revenue: 18000, years_in_business: 3, score: 42, temperature: 'COLD', stage: 'new_lead', created_at: '2025-03-13' },
-        { id: '10', business_name: 'Royal Medical Supply', industry: 'Healthcare', contact_name: 'Lisa Anderson', phone: '(555) 012-3456', email: 'lisa@royalmedical.com', monthly_revenue: 145000, years_in_business: 10, score: 95, temperature: 'HOT', stage: 'funded', created_at: '2025-02-15' },
-    ],
+    leads: generatePremiumLeads(),
     activities: [
-        { id: '1', lead_id: '1', type: 'call', subject: 'Initial consultation', content: 'Discussed funding needs for expansion', created_at: '2025-03-11T10:00:00' },
-        { id: '2', lead_id: '1', type: 'email', subject: 'Document request', content: 'Sent bank statements and tax returns', created_at: '2025-03-12T14:30:00' },
-        { id: '3', lead_id: '2', type: 'call', subject: 'Follow-up call', content: 'Left voicemail, will try again tomorrow', created_at: '2025-03-13T11:00:00' },
-        { id: '4', lead_id: '3', type: 'email', subject: 'Application submitted', content: 'All documents received, application sent to underwriting', created_at: '2025-03-10T16:00:00' },
-        { id: '5', lead_id: '10', type: 'status_change', subject: 'Status: Funded', content: 'Deal funded for $250,000', created_at: '2025-03-01T09:00:00' },
+        { id: '1', lead_id: '1', type: 'call', subject: 'Initial consultation', content: 'Discussed funding needs for expansion', created_at: '2025-03-20T10:00:00' },
+        { id: '2', lead_id: '1', type: 'email', subject: 'Document request', content: 'Sent bank statements and tax returns', created_at: '2025-03-21T14:30:00' },
+        { id: '3', lead_id: '2', type: 'call', subject: 'Follow-up call', content: 'Left voicemail, will try again tomorrow', created_at: '2025-03-22T11:00:00' },
+        { id: '4', lead_id: '3', type: 'email', subject: 'Application submitted', content: 'All documents received, application sent to underwriting', created_at: '2025-03-19T16:00:00' },
+        { id: '5', lead_id: '10', type: 'status_change', subject: 'Status: Funded', content: 'Deal funded for $250,000', created_at: '2025-03-15T09:00:00' },
+        { id: '6', lead_id: '15', type: 'call', subject: 'Discovery call', content: 'Qualified lead, needs $150K for equipment', created_at: '2025-03-21T13:30:00' },
+        { id: '7', lead_id: '22', type: 'meeting', subject: 'In-person meeting', content: 'Reviewed terms, moving to application', created_at: '2025-03-20T15:00:00' },
+        { id: '8', lead_id: '8', type: 'email', subject: 'Approval notification', content: 'Congratulations! Approved for $180K', created_at: '2025-03-22T10:00:00' },
     ],
     followUps: [
-        { id: '1', lead_id: '1', title: 'Review bank statements', due_at: '2025-03-16T10:00:00', status: 'pending' },
-        { id: '2', lead_id: '2', title: 'Follow up call', due_at: '2025-03-16T14:00:00', status: 'pending' },
-        { id: '3', lead_id: '5', title: 'Check submission status', due_at: '2025-03-17T11:00:00', status: 'pending' },
-        { id: '4', lead_id: '3', title: 'Collect missing docs', due_at: '2025-03-15T16:00:00', status: 'completed' },
+        { id: '1', lead_id: '1', title: 'Review bank statements', due_at: '2025-03-24T10:00:00', status: 'pending' },
+        { id: '2', lead_id: '2', title: 'Follow up call', due_at: '2025-03-24T14:00:00', status: 'pending' },
+        { id: '3', lead_id: '5', title: 'Check submission status', due_at: '2025-03-25T11:00:00', status: 'pending' },
+        { id: '4', lead_id: '3', title: 'Collect missing docs', due_at: '2025-03-23T16:00:00', status: 'completed' },
+        { id: '5', lead_id: '12', title: 'Send application link', due_at: '2025-03-24T09:00:00', status: 'pending' },
+        { id: '6', lead_id: '18', title: 'Schedule follow-up', due_at: '2025-03-25T14:30:00', status: 'pending' },
     ],
     funders: [
         { id: '1', name: 'Rapid Capital', tier: 'tier_1_beginner', min_deal_amount: 5000, max_deal_amount: 50000, default_commission_rate: 8, avg_turnaround_hours: 24, is_preferred: true, contact_name: 'James Wilson', contact_email: 'james@rapidcapital.com' },
@@ -53,11 +333,11 @@ const defaultData = {
         { month: 'Dec 2024', deals_funded: 8, total_funded: 950000, total_commission: 95000, avg_commission_rate: 10 },
         { month: 'Jan 2025', deals_funded: 4, total_funded: 380000, total_commission: 38000, avg_commission_rate: 10 },
         { month: 'Feb 2025', deals_funded: 6, total_funded: 720000, total_commission: 72000, avg_commission_rate: 10 },
-        { month: 'Mar 2025', deals_funded: 3, total_funded: 525000, total_commission: 52500, avg_commission_rate: 10 },
+        { month: 'Mar 2025', deals_funded: 5, total_funded: 925000, total_commission: 92500, avg_commission_rate: 10 },
     ],
     user: {
         firstName: 'Damon',
-        lastName: 'Mathews',
+        lastName: 'Mathewson',
         email: 'damon@mathewsfunding.com',
         phone: '',
         company: 'Mathews Funding',
@@ -70,6 +350,57 @@ const defaultData = {
         }
     }
 };
+
+// Generate 60 premium leads
+function generatePremiumLeads() {
+    const industries = ['Transportation', 'Food & Beverage', 'Construction', 'Retail', 'Technology', 'Automotive', 'Beauty', 'Healthcare', 'Manufacturing', 'Real Estate', 'Professional Services', 'Wholesale'];
+    const businessTypes = ['LLC', 'Inc', 'Corp', 'Company', 'Services', 'Solutions', 'Group'];
+    const contacts = ['John', 'Michael', 'David', 'James', 'Robert', 'William', 'Maria', 'Jennifer', 'Lisa', 'Sarah', 'Jessica', 'Emily'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+    
+    const leads = [];
+    
+    // Generate 60 leads
+    for (let i = 1; i <= 60; i++) {
+        const revenue = Math.floor(Math.random() * 180000) + 15000; // $15K - $195K monthly
+        const years = Math.floor(Math.random() * 12) + 1;
+        const industry = industries[Math.floor(Math.random() * industries.length)];
+        const temp = Math.random() > 0.6 ? 'HOT' : (Math.random() > 0.4 ? 'WARM' : 'COLD');
+        
+        const stages = ['new_lead', 'contacted', 'qualified', 'application_sent', 'submitted_to_funder', 'approved', 'funded', 'paid'];
+        const stageWeights = [0.15, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05];
+        const stage = weightedRandom(stages, stageWeights);
+        
+        const score = Math.min(95, Math.floor(revenue / 2500) + (years * 3) + Math.floor(Math.random() * 20));
+        
+        leads.push({
+            id: i.toString(),
+            business_name: `${contacts[Math.floor(Math.random() * contacts.length)]}'s ${industry} ${businessTypes[Math.floor(Math.random() * businessTypes.length)]}`,
+            industry: industry,
+            contact_name: `${contacts[Math.floor(Math.random() * contacts.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
+            phone: `(${555 + Math.floor(Math.random() * 400)}) ${Math.floor(100 + Math.random() * 899)}-${Math.floor(1000 + Math.random() * 8999)}`,
+            email: `contact${i}@business${i}.com`,
+            monthly_revenue: revenue,
+            years_in_business: years,
+            score: score,
+            temperature: temp,
+            stage: stage,
+            created_at: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        });
+    }
+    
+    return leads;
+}
+
+function weightedRandom(items, weights) {
+    const random = Math.random();
+    let sum = 0;
+    for (let i = 0; i < items.length; i++) {
+        sum += weights[i];
+        if (random < sum) return items[i];
+    }
+    return items[items.length - 1];
+}
 
 // Load data from localStorage or use defaults
 function loadStore() {
@@ -123,17 +454,39 @@ function navigate(page, params = {}) {
     }
     
     // Handle specific pages
-    if (page === 'dashboard') renderDashboard();
-    if (page === 'leads') renderLeads();
-    if (page === 'pipeline') renderPipeline();
+    if (page === 'dashboard') {
+        renderDashboard();
+        // Re-trigger animations for new page
+        setTimeout(() => initAnimations(), 50);
+    }
+    if (page === 'leads') {
+        renderLeads();
+        setTimeout(() => initAnimations(), 50);
+    }
+    if (page === 'pipeline') {
+        renderPipeline();
+        setTimeout(() => initAnimations(), 50);
+    }
     if (page === 'lead-detail') {
         currentLeadId = params.id;
         renderLeadDetail();
     }
-    if (page === 'calendar') renderCalendar();
-    if (page === 'commissions') renderCommissions();
-    if (page === 'funders') renderFunders();
-    if (page === 'settings') renderSettings();
+    if (page === 'calendar') {
+        renderCalendar();
+        setTimeout(() => initAnimations(), 50);
+    }
+    if (page === 'commissions') {
+        renderCommissions();
+        setTimeout(() => initAnimations(), 50);
+    }
+    if (page === 'funders') {
+        renderFunders();
+        setTimeout(() => initAnimations(), 50);
+    }
+    if (page === 'settings') {
+        renderSettings();
+        setTimeout(() => initAnimations(), 50);
+    }
     
     // Save state to URL hash
     window.location.hash = page + (params.id ? '/' + params.id : '');
@@ -153,16 +506,21 @@ function navigateToAddLead() {
 function renderDashboard() {
     const stats = calculateStats();
     
+    // Update DOM elements
     document.getElementById('stat-total-leads').textContent = stats.totalLeads;
+    document.getElementById('stat-total-leads').dataset.target = stats.totalLeads;
     document.getElementById('stat-hot').textContent = stats.hotLeads;
     document.getElementById('stat-warm').textContent = stats.warmLeads;
     document.getElementById('stat-hot-leads').textContent = stats.hotLeads;
+    document.getElementById('stat-hot-leads').dataset.target = stats.hotLeads;
     document.getElementById('stat-pipeline').textContent = '$' + stats.pipelineValue.toLocaleString();
     document.getElementById('stat-conversion').textContent = stats.conversionRate + '%';
+    document.getElementById('stat-conversion').dataset.target = parseInt(stats.conversionRate);
     document.getElementById('stat-avg-deal').textContent = stats.avgDealSize.toLocaleString();
     document.getElementById('stat-commission').textContent = '$' + stats.commissionThisMonth.toLocaleString();
     document.getElementById('stat-deals').textContent = stats.dealsThisMonth;
     
+    // Path to $1M
     const pathProgress = (stats.totalCommission / store.user.commissionGoal) * 100;
     document.getElementById('path-percentage').textContent = pathProgress.toFixed(2) + '%';
     document.getElementById('path-fill').style.width = Math.min(100, pathProgress) + '%';
@@ -171,6 +529,13 @@ function renderDashboard() {
     renderPipelineSummary();
     renderTodaysFollowUps();
     renderRecentActivity();
+    
+    // Animate counters after a short delay
+    setTimeout(() => {
+        animateCounters();
+        animateMoneyValue(document.getElementById('stat-pipeline'), stats.pipelineValue, 2000);
+        animateMoneyValue(document.getElementById('stat-commission'), stats.commissionThisMonth, 2000);
+    }, 800);
 }
 
 function calculateStats() {
@@ -186,7 +551,7 @@ function calculateStats() {
         .reduce((sum, l) => sum + (l.monthly_revenue || 0) * 3, 0);
     
     const avgDealSize = fundedLeads.length > 0 
-        ? fundedLeads.reduce((sum, l) => sum + (l.monthly_revenue || 0) * 3, 0) / fundedLeads.length 
+        ? Math.floor(fundedLeads.reduce((sum, l) => sum + (l.monthly_revenue || 0) * 3, 0) / fundedLeads.length)
         : 0;
     
     const thisMonth = store.commissions[store.commissions.length - 1];
@@ -229,9 +594,9 @@ function renderPipelineSummary() {
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
             <div style="display: flex; align-items: center;">
                 <div style="width: 12px; height: 12px; border-radius: 50%; background: ${s.color}; margin-right: 0.5rem;"></div>
-                <span style="font-size: 0.875rem;">${s.name}</span>
+                <span style="font-size: 0.875rem; color: rgba(255,255,255,0.8);">${s.name}</span>
             </div>
-            <span style="font-weight: 500;">${stageCounts[s.key] || 0}</span>
+            <span style="font-weight: 600; color: #fff;">${stageCounts[s.key] || 0}</span>
         </div>
     `).join('');
     
@@ -247,20 +612,20 @@ function renderTodaysFollowUps() {
     
     if (todaysFollowUps.length === 0) {
         document.getElementById('todays-followups').innerHTML = 
-            '<p style="color: #6b7280; font-size: 0.875rem;">No follow-ups scheduled for today.</p>';
+            '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No follow-ups scheduled for today.</p>';
         return;
     }
     
     const html = todaysFollowUps.map(f => {
         const lead = store.leads.find(l => l.id === f.lead_id);
         return `
-            <div style="display: flex; align-items: center; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="navigate('lead-detail', {id: '${f.lead_id}'})">
-                <i class="fas fa-clock" style="color: #9ca3af; margin-right: 0.75rem;"></i>
+            <div style="display: flex; align-items: center; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid rgba(212, 175, 55, 0.1); transition: all 0.3s ease;" onclick="navigate('lead-detail', {id: '${f.lead_id}'})">
+                <i class="fas fa-clock" style="color: var(--gold); margin-right: 0.75rem;"></i>
                 <div style="flex: 1;">
-                    <div style="font-weight: 500;">${lead ? lead.business_name : 'Unknown'}</div>
-                    <div style="font-size: 0.75rem; color: #6b7280;">${f.title}</div>
+                    <div style="font-weight: 500; color: #fff;">${lead ? lead.business_name : 'Unknown'}</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">${f.title}</div>
                 </div>
-                <span style="font-size: 0.75rem; color: #6b7280;">${f.due_at.split('T')[1].substring(0, 5)}</span>
+                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${f.due_at.split('T')[1].substring(0, 5)}</span>
             </div>
         `;
     }).join('');
@@ -275,7 +640,7 @@ function renderRecentActivity() {
     
     if (recentActivities.length === 0) {
         document.getElementById('recent-activity').innerHTML = 
-            '<p style="color: #6b7280; font-size: 0.875rem;">No recent activity.</p>';
+            '<p style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">No recent activity.</p>';
         return;
     }
     
@@ -283,16 +648,16 @@ function renderRecentActivity() {
         const lead = store.leads.find(l => l.id === a.lead_id);
         const config = getActivityTypeConfig(a.type);
         return `
-            <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="navigate('lead-detail', {id: '${a.lead_id}'})\">
-                <div style="width: 28px; height: 28px; background: ${config.color}20; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: ${config.color}; flex-shrink: 0;">
+            <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid rgba(212, 175, 55, 0.1);" onclick="navigate('lead-detail', {id: '${a.lead_id}'})\">
+                <div style="width: 32px; height: 32px; background: ${config.color}20; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: ${config.color}; flex-shrink: 0;">
                     <i class="fas fa-${config.icon}" style="font-size: 0.75rem;"></i>
                 </div>
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 0.875rem;">
-                        <span style="font-weight: 500;">${lead ? lead.business_name : 'Unknown'}</span>
-                        <span style="color: #6b7280;"> — ${config.label}</span>
+                        <span style="font-weight: 500; color: #fff;">${lead ? lead.business_name : 'Unknown'}</span>
+                        <span style="color: rgba(255,255,255,0.6);"> — ${config.label}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: #9ca3af;">${formatActivityTime(a.created_at)}</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">${formatActivityTime(a.created_at)}</div>
                 </div>
             </div>
         `;
@@ -332,7 +697,7 @@ function filterLeads() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No leads found.</td>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">No leads found.</td>
             </tr>
         `;
         return;
@@ -341,18 +706,18 @@ function filterLeads() {
     tbody.innerHTML = filtered.map(lead => `
         <tr style="cursor: pointer;">
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});">
-                <div style="font-weight: 500;">${lead.business_name}</div>
-                <div style="font-size: 0.75rem; color: #6b7280;">${lead.industry || '-'}</div>
+                <div style="font-weight: 500; color: #fff;">${lead.business_name}</div>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead.industry || '-'}</div>
             </td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});">
-                <div>${lead.contact_name || '-'}</div>
-                <div style="font-size: 0.75rem; color: #6b7280;">${lead.email || '-'}</div>
+                <div style="color: #fff;">${lead.contact_name || '-'}</div>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead.email || '-'}</div>
             </td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});">
-                <div>${lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-'}</div>
-                <div style="font-size: 0.75rem; color: #6b7280;">${lead.years_in_business || '-'} years</div>
+                <div style="color: #fff;">${lead.monthly_revenue ? '$' + lead.monthly_revenue.toLocaleString() : '-'}</div>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead.years_in_business || '-'} years</div>
             </td>
-            <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><div style="font-weight: 500;">${lead.score || '-'}</div></td>
+            <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><div style="font-weight: 500; color: var(--gold);">${lead.score || '-'}</div></td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.temperature.toLowerCase()}">${lead.temperature}</span></td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.stage}">${lead.stage.replace(/_/g, ' ')}</span></td>
             <td>
@@ -363,13 +728,13 @@ function filterLeads() {
                     <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); navigate('lead-detail', {id: '${lead.id}'});" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fef2f2; color: #dc2626;" onclick="event.stopPropagation(); deleteLead('${lead.id}');" title="Delete">
+                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(220, 38, 38, 0.2); color: #ff6b6b; border-color: rgba(220, 38, 38, 0.3);" onclick="event.stopPropagation(); deleteLead('${lead.id}');" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
-                    ${lead.phone ? `<a href="tel:${lead.phone}" style="color: #16a34a; padding: 0.25rem;" onclick="event.stopPropagation();" title="Call">
+                    ${lead.phone ? `<a href="tel:${lead.phone}" style="color: #4ade80; padding: 0.25rem;" onclick="event.stopPropagation();" title="Call">
                         <i class="fas fa-phone"></i>
                     </a>` : ''}
-                    ${lead.email ? `<a href="mailto:${lead.email}" style="color: #4f46e5; padding: 0.25rem;" onclick="event.stopPropagation();" title="Email">
+                    ${lead.email ? `<a href="mailto:${lead.email}" style="color: var(--gold); padding: 0.25rem;" onclick="event.stopPropagation();" title="Email">
                         <i class="fas fa-envelope"></i>
                     </a>` : ''}
                 </div>
@@ -415,13 +780,12 @@ function addLead() {
     };
     
     store.leads.push(newLead);
-    saveStore(); // FIXED: Save to localStorage
+    saveStore();
     
     hideAddLeadModal();
     navigate('leads');
 }
 
-// FIXED: New delete lead function
 function deleteLead(leadId) {
     if (!confirm('Are you sure you want to delete this lead?')) {
         return;
@@ -430,7 +794,6 @@ function deleteLead(leadId) {
     const index = store.leads.findIndex(l => l.id === leadId);
     if (index > -1) {
         store.leads.splice(index, 1);
-        // Also remove related activities and follow-ups
         store.activities = store.activities.filter(a => a.lead_id !== leadId);
         store.followUps = store.followUps.filter(f => f.lead_id !== leadId);
         saveStore();
@@ -444,26 +807,15 @@ function deleteLead(leadId) {
 
 function renderPipeline() {
     const stages = [
-        { id: 'new_lead', name: 'New Lead', color: 'bg-blue-500' },
-        { id: 'contacted', name: 'Contacted', color: 'bg-purple-500' },
-        { id: 'qualified', name: 'Qualified', color: 'bg-teal-500' },
-        { id: 'application_sent', name: 'Application Sent', color: 'bg-indigo-500' },
-        { id: 'submitted_to_funder', name: 'Submitted to Funder', color: 'bg-cyan-500' },
-        { id: 'approved', name: 'Approved', color: 'bg-emerald-500' },
-        { id: 'funded', name: 'Funded', color: 'bg-green-500' },
-        { id: 'paid', name: 'Paid', color: 'bg-lime-500' },
+        { id: 'new_lead', name: 'New Lead', color: '#3b82f6' },
+        { id: 'contacted', name: 'Contacted', color: '#a855f7' },
+        { id: 'qualified', name: 'Qualified', color: '#14b8a6' },
+        { id: 'application_sent', name: 'Application Sent', color: '#6366f1' },
+        { id: 'submitted_to_funder', name: 'Submitted to Funder', color: '#06b6d4' },
+        { id: 'approved', name: 'Approved', color: '#10b981' },
+        { id: 'funded', name: 'Funded', color: '#22c55e' },
+        { id: 'paid', name: 'Paid', color: '#84cc16' },
     ];
-    
-    const stageColors = {
-        new_lead: '#3b82f6',
-        contacted: '#a855f7',
-        qualified: '#14b8a6',
-        application_sent: '#6366f1',
-        submitted_to_funder: '#06b6d4',
-        approved: '#10b981',
-        funded: '#22c55e',
-        paid: '#84cc16'
-    };
     
     const container = document.getElementById('pipeline-container');
     
@@ -472,7 +824,7 @@ function renderPipeline() {
         
         return `
             <div class="pipeline-column">
-                <div class="pipeline-header" style="background: ${stageColors[stage.id]};">
+                <div class="pipeline-header" style="background: ${stage.color};">
                     <span>${stage.name}</span>
                     <span class="pipeline-count">${stageLeads.length}</span>
                 </div>
@@ -484,7 +836,7 @@ function renderPipeline() {
                             ${lead.monthly_revenue ? `<div class="lead-revenue">$${lead.monthly_revenue.toLocaleString()}/mo</div>` : ''}
                             <div class="lead-footer">
                                 <span class="badge badge-${lead.temperature.toLowerCase()}" style="font-size: 0.625rem;">${lead.temperature}</span>
-                                <span style="font-size: 0.75rem; color: #6b7280;">Score: ${lead.score}</span>
+                                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Score: ${lead.score}</span>
                             </div>
                         </div>
                     `).join('')}
@@ -516,7 +868,7 @@ function renderLeadDetail() {
     contactInfo.innerHTML = `
         ${lead.contact_name ? `
         <div class="detail-item">
-            <i class="fas fa-building"></i>
+            <i class="fas fa-user"></i>
             <div>
                 <div class="detail-label">Contact</div>
                 <div class="detail-value">${lead.contact_name}</div>
@@ -617,13 +969,13 @@ function renderLeadDetail() {
     
     const followUpsContainer = document.getElementById('detail-followups');
     if (leadFollowUps.length === 0) {
-        followUpsContainer.innerHTML = '<p style="color: #6b7280;">No follow-ups scheduled.</p>';
+        followUpsContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No follow-ups scheduled.</p>';
     } else {
         followUpsContainer.innerHTML = leadFollowUps.map(f => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                 <div>
-                    <div style="font-weight: 500;">${f.title}</div>
-                    <div style="font-size: 0.75rem; color: #6b7280;">Due: ${new Date(f.due_at).toLocaleString()}</div>
+                    <div style="font-weight: 500; color: #fff;">${f.title}</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Due: ${new Date(f.due_at).toLocaleString()}</div>
                 </div>
                 <span class="badge badge-${f.status === 'completed' ? 'funded' : 'warm'}">${f.status}</span>
             </div>
@@ -654,12 +1006,10 @@ function showActivityModal(leadId = null) {
     currentActivityLeadId = leadId || currentLeadId;
     if (!currentActivityLeadId) return;
     
-    // Set default datetime to now
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.getElementById('activity-datetime').value = now.toISOString().slice(0, 16);
     
-    // Reset form
     document.getElementById('activity-type').value = 'call_outbound';
     document.getElementById('activity-subject').value = '';
     document.getElementById('activity-content').value = '';
@@ -668,7 +1018,6 @@ function showActivityModal(leadId = null) {
     document.getElementById('activity-followup-datetime').value = '';
     document.getElementById('activity-followup-title').value = '';
     
-    // Update title with lead name if available
     const lead = store.leads.find(l => l.id === currentActivityLeadId);
     document.getElementById('activity-modal-title').textContent = lead 
         ? `Log Activity - ${lead.business_name}` 
@@ -687,7 +1036,6 @@ function toggleFollowUpFields() {
     document.getElementById('followup-fields').style.display = checked ? 'block' : 'none';
     
     if (checked) {
-        // Default to tomorrow same time
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
@@ -699,7 +1047,6 @@ function updateActivityForm() {
     const type = document.getElementById('activity-type').value;
     const subjectInput = document.getElementById('activity-subject');
     
-    // Set default subjects based on type
     const defaults = {
         call_outbound: 'Outbound call',
         call_inbound: 'Inbound call',
@@ -738,7 +1085,6 @@ function saveActivity() {
     
     store.activities.push(activity);
     
-    // Handle follow-up if checked
     if (document.getElementById('activity-followup-check').checked) {
         const followupDate = document.getElementById('activity-followup-datetime').value;
         const followupTitle = document.getElementById('activity-followup-title').value.trim() || 'Follow-up';
@@ -758,7 +1104,6 @@ function saveActivity() {
     saveStore();
     hideActivityModal();
     
-    // Refresh current view
     if (document.getElementById('lead-detail-page').classList.contains('active')) {
         renderLeadDetail();
     } else if (document.getElementById('leads-page').classList.contains('active')) {
@@ -779,7 +1124,6 @@ function showQuickCallModal(leadId) {
     
     document.getElementById('quick-call-lead-name').textContent = lead.business_name;
     
-    // Reset form
     document.querySelector('input[name="quick-call-type"][value="call_outbound"]').checked = true;
     document.getElementById('quick-call-outcome').value = 'Connected';
     document.getElementById('quick-call-notes').value = '';
@@ -788,7 +1132,6 @@ function showQuickCallModal(leadId) {
     document.getElementById('quick-call-followup-date').value = '';
     document.getElementById('quick-call-followup-title').value = '';
     
-    // Default follow-up date (tomorrow)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
@@ -802,7 +1145,6 @@ function hideQuickCallModal() {
     quickCallLeadId = null;
 }
 
-// Toggle follow-up fields in quick call modal
 document.addEventListener('change', function(e) {
     if (e.target.id === 'quick-call-schedule-followup') {
         document.getElementById('quick-call-followup-fields').style.display = e.target.checked ? 'block' : 'none';
@@ -827,7 +1169,6 @@ function saveQuickCall() {
     
     store.activities.push(activity);
     
-    // Handle follow-up scheduling
     if (document.getElementById('quick-call-schedule-followup').checked) {
         const followupDate = document.getElementById('quick-call-followup-date').value;
         const followupTitle = document.getElementById('quick-call-followup-title').value.trim() || `Follow-up: ${outcome}`;
@@ -847,7 +1188,6 @@ function saveQuickCall() {
     saveStore();
     hideQuickCallModal();
     
-    // Refresh view
     if (document.getElementById('leads-page').classList.contains('active')) {
         renderLeads();
     } else if (document.getElementById('lead-detail-page').classList.contains('active')) {
@@ -862,13 +1202,8 @@ function toggleActivityCollapse(activityId) {
     }
 }
 
-function getActivityIcon(type) {
-    const config = ACTIVITY_TYPES[type] || { icon: 'clock', category: 'default' };
-    return config.icon;
-}
-
 function getActivityTypeConfig(type) {
-    return ACTIVITY_TYPES[type] || { label: type, icon: 'clock', color: '#4f46e5', category: 'default' };
+    return ACTIVITY_TYPES[type] || { label: type, icon: 'clock', color: '#D4AF37', category: 'default' };
 }
 
 function switchTab(tab) {
@@ -883,7 +1218,7 @@ function updateLeadTemperature() {
     const lead = store.leads.find(l => l.id === currentLeadId);
     if (lead) {
         lead.temperature = document.getElementById('detail-temperature').value;
-        saveStore(); // FIXED: Save to localStorage
+        saveStore();
     }
 }
 
@@ -903,8 +1238,8 @@ function updateLeadStage() {
             created_at: new Date().toISOString(),
             created_by: `${store.user.firstName} ${store.user.lastName}`
         });
-        saveStore(); // FIXED: Save to localStorage
-        renderLeadDetail(); // Refresh to show the new activity
+        saveStore();
+        renderLeadDetail();
     }
 }
 
@@ -916,7 +1251,6 @@ function renderCalendar() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    // FIXED: Display correct year (was showing 2026)
     document.getElementById('calendar-month').textContent = 
         currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     
@@ -958,7 +1292,6 @@ function renderCalendar() {
     
     document.getElementById('calendar-grid').innerHTML = html;
     
-    // Upcoming follow-ups
     const upcoming = store.followUps
         .filter(f => f.status === 'pending')
         .sort((a, b) => new Date(a.due_at) - new Date(b.due_at))
@@ -966,15 +1299,15 @@ function renderCalendar() {
     
     const upcomingContainer = document.getElementById('upcoming-followups');
     if (upcoming.length === 0) {
-        upcomingContainer.innerHTML = '<p style="color: #6b7280;">No upcoming follow-ups.</p>';
+        upcomingContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5);">No upcoming follow-ups.</p>';
     } else {
         upcomingContainer.innerHTML = upcoming.map(f => {
             const lead = store.leads.find(l => l.id === f.lead_id);
             return `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 0.5rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                     <div>
-                        <div style="font-weight: 500;">${f.title}</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">${lead ? lead.business_name : 'Unknown'} — ${new Date(f.due_at).toLocaleString()}</div>
+                        <div style="font-weight: 500; color: #fff;">${f.title}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead ? lead.business_name : 'Unknown'} — ${new Date(f.due_at).toLocaleString()}</div>
                     </div>
                     <span class="badge badge-warm">Pending</span>
                 </div>
@@ -1008,7 +1341,6 @@ function renderCommissions() {
     document.getElementById('comm-deals').textContent = totalDeals;
     document.getElementById('comm-rate').textContent = avgRate.toFixed(1) + '%';
     
-    // Chart
     const maxCommission = Math.max(...store.commissions.map(c => c.total_commission));
     const maxFunded = Math.max(...store.commissions.map(c => c.total_funded / 1000));
     
@@ -1029,13 +1361,12 @@ function renderCommissions() {
     
     document.getElementById('commission-chart').innerHTML = chartHtml;
     
-    // Table
     document.getElementById('commissions-table').innerHTML = store.commissions.map(c => `
         <tr>
             <td>${c.month}</td>
             <td>${c.deals_funded}</td>
             <td>$${c.total_funded.toLocaleString()}</td>
-            <td style="color: #16a34a; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
+            <td style="color: #4ade80; font-weight: 500;">$${c.total_commission.toLocaleString()}</td>
             <td>${c.avg_commission_rate}%</td>
         </tr>
     `).join('');
@@ -1063,39 +1394,39 @@ function renderFunders() {
     
     container.innerHTML = Object.entries(grouped).map(([tier, funders]) => `
         <div class="card" style="margin-bottom: 1.5rem; overflow: hidden; padding: 0;">
-            <div style="background: #4f46e5; padding: 0.75rem 1.5rem;">
-                <h3 style="color: white; font-weight: 600;">${tierLabels[tier] || tier}</h3>
+            <div style="background: linear-gradient(135deg, #D4AF37 0%, #E5C158 100%); padding: 0.875rem 1.5rem;">
+                <h3 style="color: #050D18; font-weight: 600; font-family: 'Cormorant Garamond', serif;">${tierLabels[tier] || tier}</h3>
             </div>
             <div>
                 ${funders.map(f => `
-                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 500;">${f.name}</h4>
+                                    <h4 style="font-size: 1.125rem; font-weight: 500; color: #fff;">${f.name}</h4>
                                     ${f.is_preferred ? '<span class="badge badge-funded" style="font-size: 0.625rem;">Preferred</span>' : ''}
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 0.75rem;">
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Deal Range</div>
-                                        <div style="font-weight: 500;">$${f.min_deal_amount.toLocaleString()} - $${f.max_deal_amount ? f.max_deal_amount.toLocaleString() : '∞'}</div>
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Deal Range</div>
+                                        <div style="font-weight: 500; color: #fff;">$${f.min_deal_amount.toLocaleString()} - $${f.max_deal_amount ? f.max_deal_amount.toLocaleString() : '∞'}</div>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Commission</div>
-                                        <div style="font-weight: 500; color: #16a34a;">${f.default_commission_rate}%</div>
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Commission</div>
+                                        <div style="font-weight: 500; color: #4ade80;">${f.default_commission_rate}%</div>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Turnaround</div>
-                                        <div style="font-weight: 500;">${f.avg_turnaround_hours}h</div>
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Turnaround</div>
+                                        <div style="font-weight: 500; color: #fff;">${f.avg_turnaround_hours}h</div>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">Contact</div>
-                                        <div style="font-weight: 500;">${f.contact_name || '-'}</div>
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Contact</div>
+                                        <div style="font-weight: 500; color: #fff;">${f.contact_name || '-'}</div>
                                     </div>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 1rem;">
-                                ${f.contact_email ? `<a href="mailto:${f.contact_email}" style="color: #4f46e5; font-size: 0.875rem;">Email</a>` : ''}
+                                ${f.contact_email ? `<a href="mailto:${f.contact_email}" style="color: var(--gold); font-size: 0.875rem;">Email</a>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1130,7 +1461,7 @@ function renderSettingsContent(tab) {
     switch(tab) {
         case 'profile':
             container.innerHTML = `
-                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem;">Profile Settings</h3>
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Profile Settings</h3>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
                     <div class="form-group">
                         <label class="form-label">First Name</label>
@@ -1153,7 +1484,7 @@ function renderSettingsContent(tab) {
                         <input type="text" class="form-input" id="setting-company" value="${store.user.company}">
                     </div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1161,38 +1492,38 @@ function renderSettingsContent(tab) {
             
         case 'notifications':
             container.innerHTML = `
-                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem;">Notification Preferences</h3>
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Notification Preferences</h3>
                 <div style="space-y: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                         <div>
-                            <div style="font-weight: 500;">Email Notifications</div>
-                            <div style="font-size: 0.875rem; color: #6b7280;">Receive updates via email</div>
+                            <div style="font-weight: 500; color: #fff;">Email Notifications</div>
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Receive updates via email</div>
                         </div>
                         <input type="checkbox" id="notif-email" ${store.user.notifications.email ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                         <div>
-                            <div style="font-weight: 500;">SMS Notifications</div>
-                            <div style="font-size: 0.875rem; color: #6b7280;">Receive updates via text</div>
+                            <div style="font-weight: 500; color: #fff;">SMS Notifications</div>
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Receive updates via text</div>
                         </div>
                         <input type="checkbox" id="notif-sms" ${store.user.notifications.sms ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                         <div>
-                            <div style="font-weight: 500;">Follow-up Reminders</div>
-                            <div style="font-size: 0.875rem; color: #6b7280;">Get reminded about scheduled follow-ups</div>
+                            <div style="font-weight: 500; color: #fff;">Follow-up Reminders</div>
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Get reminded about scheduled follow-ups</div>
                         </div>
                         <input type="checkbox" id="notif-followup" ${store.user.notifications.followUpReminders ? 'checked' : ''}>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(5, 13, 24, 0.5); border-radius: 0.5rem; border: 1px solid rgba(212, 175, 55, 0.1);">
                         <div>
-                            <div style="font-weight: 500;">Commission Alerts</div>
-                            <div style="font-size: 0.875rem; color: #6b7280;">Notify when commissions are paid</div>
+                            <div style="font-weight: 500; color: #fff;">Commission Alerts</div>
+                            <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5);">Notify when commissions are paid</div>
                         </div>
                         <input type="checkbox" id="notif-commission" ${store.user.notifications.commissionAlerts ? 'checked' : ''}>
                     </div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1200,13 +1531,13 @@ function renderSettingsContent(tab) {
             
         case 'commission':
             container.innerHTML = `
-                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem;">Commission Settings</h3>
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Commission Settings</h3>
                 <div class="form-group" style="max-width: 400px;">
                     <label class="form-label">Annual Commission Goal</label>
                     <input type="number" class="form-input" id="setting-goal" value="${store.user.commissionGoal}">
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">Current progress: $${store.commissions.reduce((sum, c) => sum + c.total_commission, 0).toLocaleString()}</div>
+                    <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-top: 0.5rem;">Current progress: $${store.commissions.reduce((sum, c) => sum + c.total_commission, 0).toLocaleString()}</div>
                 </div>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1214,9 +1545,9 @@ function renderSettingsContent(tab) {
             
         case 'preferences':
             container.innerHTML = `
-                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem;">Application Preferences</h3>
-                <p style="color: #6b7280;">Customize your CRM experience.</p>
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; color: var(--gold);">Application Preferences</h3>
+                <p style="color: rgba(255,255,255,0.6);">Customize your CRM experience.</p>
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2);">
                     <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                 </div>
             `;
@@ -1249,7 +1580,7 @@ function saveSettings() {
     if (notifFollowup) store.user.notifications.followUpReminders = notifFollowup.checked;
     if (notifCommission) store.user.notifications.commissionAlerts = notifCommission.checked;
     
-    saveStore(); // FIXED: Save to localStorage
+    saveStore();
     alert('Settings saved successfully!');
 }
 
@@ -1286,10 +1617,7 @@ function importLeadsFromBridge() {
             return;
         }
         
-        // Categorize leads: new, duplicates by phone, duplicates by name
         const result = categorizeLeads(bridgeLeads);
-        
-        // Show preview modal
         showImportPreviewModal(result, bridgeLeads);
         
     } catch (e) {
@@ -1304,7 +1632,6 @@ function categorizeLeads(bridgeLeads) {
     const nameDuplicates = [];
     
     bridgeLeads.forEach(lead => {
-        // Check for duplicates by phone
         const phoneDup = store.leads.find(l => 
             l.phone && lead.phone && l.phone === lead.phone && l.phone !== ''
         );
@@ -1314,7 +1641,6 @@ function categorizeLeads(bridgeLeads) {
             return;
         }
         
-        // Check for duplicates by business name (fuzzy match)
         const nameDup = store.leads.find(l => {
             if (!l.business_name || !lead.business_name) return false;
             const existingName = l.business_name.toLowerCase().trim();
@@ -1339,96 +1665,91 @@ function showImportPreviewModal(result, allBridgeLeads) {
     const { newLeads, phoneDuplicates, nameDuplicates } = result;
     const totalDuplicates = phoneDuplicates.length + nameDuplicates.length;
     
-    // Create modal
     const modal = document.createElement('div');
     modal.id = 'import-preview-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5); z-index: 200;
+        background: rgba(5, 13, 24, 0.9); z-index: 200;
         display: flex; align-items: center; justify-content: center;
-        padding: 2rem;
+        padding: 2rem; backdrop-filter: blur(8px);
     `;
     
     const sourceBreakdown = getSourceBreakdown(allBridgeLeads);
     
     modal.innerHTML = `
-        <div style="background: white; border-radius: 0.75rem; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
-            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                <h2 style="font-size: 1.25rem; font-weight: 600;">📥 Import Preview</h2>
-                <p style="color: #6b7280; margin-top: 0.5rem;">Review leads before importing into your CRM</p>
+        <div style="background: #0A1829; border-radius: 1rem; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+                <h2 style="font-size: 1.5rem; font-weight: 600; color: #fff; font-family: 'Cormorant Garamond', serif;">Import Preview</h2>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Review leads before importing into your CRM</p>
             </div>
             
             <div style="padding: 1.5rem;">
-                <!-- Summary Stats -->
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">${newLeads.length}</div>
-                        <div style="font-size: 0.75rem; color: #065f46;">New Leads</div>
+                    <div style="background: rgba(74, 222, 128, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center; border: 1px solid rgba(74, 222, 128, 0.3);">
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #4ade80; font-family: 'Cormorant Garamond', serif;">${newLeads.length}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">New Leads</div>
                     </div>
-                    <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #d97706;">${totalDuplicates}</div>
-                        <div style="font-size: 0.75rem; color: #92400e;">Duplicates</div>
+                    <div style="background: rgba(251, 191, 36, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center; border: 1px solid rgba(251, 191, 36, 0.3);">
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #fbbf24; font-family: 'Cormorant Garamond', serif;">${totalDuplicates}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Duplicates</div>
                     </div>
-                    <div style="background: #e0e7ff; padding: 1rem; border-radius: 0.5rem; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #4f46e5;">${calculateAverageScore(newLeads)}</div>
-                        <div style="font-size: 0.75rem; color: #3730a3;">Avg Score</div>
+                    <div style="background: rgba(212, 175, 55, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3);">
+                        <div style="font-size: 1.75rem; font-weight: 700; color: var(--gold); font-family: 'Cormorant Garamond', serif;">${calculateAverageScore(newLeads)}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Avg Score</div>
                     </div>
-                    <div style="background: #fce7f3; padding: 1rem; border-radius: 0.5rem; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #db2777;">${newLeads.filter(l => l.temperature === 'HOT').length}</div>
-                        <div style="font-size: 0.75rem; color: #be185d;">HOT Leads</div>
+                    <div style="background: rgba(192, 132, 252, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center; border: 1px solid rgba(192, 132, 252, 0.3);">
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #c084fc; font-family: 'Cormorant Garamond', serif;">${newLeads.filter(l => l.temperature === 'HOT').length}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">HOT Leads</div>
                     </div>
                 </div>
                 
-                <!-- Source Breakdown -->
-                <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                    <div style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Lead Sources:</div>
+                <div style="background: rgba(5, 13, 24, 0.5); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(212, 175, 55, 0.1);">
+                    <div style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;">Lead Sources:</div>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                         ${sourceBreakdown.map(s => `
-                            <span style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: white; border-radius: 9999px; border: 1px solid #e5e7eb;">
+                            <span style="font-size: 0.75rem; padding: 0.25rem 0.75rem; background: rgba(212, 175, 55, 0.1); border-radius: 9999px; border: 1px solid rgba(212, 175, 55, 0.2); color: rgba(255,255,255,0.8);">
                                 ${s.source}: ${s.count}
                             </span>
                         `).join('')}
                     </div>
                 </div>
                 
-                <!-- New Leads Section -->
                 <div style="margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="font-weight: 600;">✅ New Leads to Import</span>
-                        <span style="background: #d1fae5; color: #059669; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${newLeads.length}</span>
+                        <span style="font-weight: 600; color: #fff;">New Leads to Import</span>
+                        <span style="background: rgba(74, 222, 128, 0.2); color: #4ade80; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${newLeads.length}</span>
                     </div>
-                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 0.5rem; background: rgba(5, 13, 24, 0.3);">
                         ${newLeads.length > 0 ? newLeads.map(lead => `
-                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid rgba(212, 175, 55, 0.1); display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <div style="font-weight: 500;">${lead.business_name}</div>
-                                    <div style="font-size: 0.75rem; color: #6b7280;">${lead.industry || 'Unknown'} • ${lead.source || 'Manual'}</div>
+                                    <div style="font-weight: 500; color: #fff;">${lead.business_name}</div>
+                                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${lead.industry || 'Unknown'} • ${lead.source || 'Manual'}</div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span style="font-size: 0.875rem; font-weight: 600; color: ${getScoreColor(lead.score)};">${lead.score || '-'}</span>
                                     <span class="badge badge-${(lead.temperature || 'WARM').toLowerCase()}">${lead.temperature || 'WARM'}</span>
                                 </div>
                             </div>
-                        `).join('') : '<div style="padding: 1rem; text-align: center; color: #6b7280;">No new leads to import</div>'}
+                        `).join('') : '<div style="padding: 1rem; text-align: center; color: rgba(255,255,255,0.5);">No new leads to import</div>'}
                     </div>
                 </div>
                 
-                <!-- Duplicates Section (if any) -->
                 ${totalDuplicates > 0 ? `
                 <div style="margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="font-weight: 600;">⚠️ Potential Duplicates (Will be skipped)</span>
-                        <span style="background: #fef3c7; color: #d97706; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${totalDuplicates}</span>
+                        <span style="font-weight: 600; color: #fff;">Potential Duplicates (Will be skipped)</span>
+                        <span style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">${totalDuplicates}</span>
                     </div>
-                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: #fefce8;">
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 0.5rem; background: rgba(251, 191, 36, 0.05);">
                         ${[...phoneDuplicates, ...nameDuplicates].map(dup => `
-                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb;">
+                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid rgba(251, 191, 36, 0.1);">
                                 <div style="display: flex; justify-content: space-between;">
                                     <div>
-                                        <div style="font-weight: 500; color: #92400e;">${dup.lead.business_name}</div>
-                                        <div style="font-size: 0.75rem; color: #a16207;">${dup.reason}</div>
+                                        <div style="font-weight: 500; color: #fbbf24;">${dup.lead.business_name}</div>
+                                        <div style="font-size: 0.75rem; color: rgba(251, 191, 36, 0.7);">${dup.reason}</div>
                                     </div>
-                                    <div style="font-size: 0.75rem; color: #6b7280;">Matches: ${dup.existing.business_name}</div>
+                                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Matches: ${dup.existing.business_name}</div>
                                 </div>
                             </div>
                         `).join('')}
@@ -1437,7 +1758,7 @@ function showImportPreviewModal(result, allBridgeLeads) {
                 ` : ''}
             </div>
             
-            <div style="padding: 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <div style="padding: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: flex-end; gap: 0.75rem;">
                 <button class="btn btn-secondary" onclick="closeImportPreviewModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="confirmImport(${newLeads.length}, ${totalDuplicates})" 
                     ${newLeads.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
@@ -1449,7 +1770,6 @@ function showImportPreviewModal(result, allBridgeLeads) {
     
     document.body.appendChild(modal);
     
-    // Close on outside click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeImportPreviewModal();
     });
@@ -1471,10 +1791,10 @@ function calculateAverageScore(leads) {
 }
 
 function getScoreColor(score) {
-    if (!score) return '#6b7280';
-    if (score >= 80) return '#dc2626'; // Red for HOT
-    if (score >= 60) return '#d97706'; // Orange for WARM
-    return '#6b7280'; // Gray for COLD
+    if (!score) return 'rgba(255,255,255,0.5)';
+    if (score >= 80) return '#ff6b6b';
+    if (score >= 60) return '#fbbf24';
+    return 'rgba(255,255,255,0.5)';
 }
 
 function closeImportPreviewModal() {
@@ -1486,24 +1806,18 @@ function confirmImport(newCount, duplicateCount) {
     const bridgeData = localStorage.getItem(CRM_BRIDGE_KEY);
     const bridgeLeads = JSON.parse(bridgeData);
     
-    // Categorize again to get exact lists
     const result = categorizeLeads(bridgeLeads);
     
     let imported = 0;
     let skipped = 0;
     let errors = 0;
     
-    // Import only new leads
     result.newLeads.forEach(lead => {
         try {
-            // Preserve score and source metadata
             const newLead = {
                 ...lead,
-                // Ensure source is preserved
                 source: lead.source || 'Manual',
-                // Ensure score is preserved
                 score: lead.score || 50,
-                // Add metadata for tracking
                 import_metadata: {
                     imported_at: new Date().toISOString(),
                     original_source: lead.source || 'Manual',
@@ -1513,7 +1827,6 @@ function confirmImport(newCount, duplicateCount) {
             
             store.leads.unshift(newLead);
             
-            // Add activity
             store.activities.unshift({
                 id: String(Date.now() + Math.random()),
                 lead_id: newLead.id,
@@ -1534,19 +1847,15 @@ function confirmImport(newCount, duplicateCount) {
     
     saveStore();
     
-    // Clear the bridge
     localStorage.removeItem(CRM_BRIDGE_KEY);
     
     closeImportPreviewModal();
     
-    // Show detailed summary
     showImportSummary(imported, skipped, errors);
     
-    // Hide import banner
     const banner = document.getElementById('import-banner');
     if (banner) banner.style.display = 'none';
     
-    // Refresh current view
     const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
     if (currentPage) {
         navigate(currentPage);
@@ -1558,29 +1867,29 @@ function showImportSummary(imported, skipped, errors) {
     modal.id = 'import-summary-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5); z-index: 200;
+        background: rgba(5, 13, 24, 0.9); z-index: 200;
         display: flex; align-items: center; justify-content: center;
-        padding: 2rem;
+        padding: 2rem; backdrop-filter: blur(8px);
     `;
     
     modal.innerHTML = `
-        <div style="background: white; border-radius: 0.75rem; width: 100%; max-width: 500px; text-align: center; padding: 2rem;">
+        <div style="background: #0A1829; border-radius: 1rem; width: 100%; max-width: 500px; text-align: center; padding: 2rem; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
             <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Import Complete!</h2>
-            <p style="color: #6b7280; margin-bottom: 1.5rem;">Your leads have been successfully imported into the CRM.</p>
+            <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #fff; font-family: 'Cormorant Garamond', serif;">Import Complete!</h2>
+            <p style="color: rgba(255,255,255,0.6); margin-bottom: 1.5rem;">Your leads have been successfully imported into the CRM.</p>
             
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem;">
-                    <div style="font-size: 2rem; font-weight: 700; color: #059669;">${imported}</div>
-                    <div style="font-size: 0.75rem; color: #065f46;">Imported</div>
+                <div style="background: rgba(74, 222, 128, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(74, 222, 128, 0.3);">
+                    <div style="font-size: 1.75rem; font-weight: 700; color: #4ade80; font-family: 'Cormorant Garamond', serif;">${imported}</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Imported</div>
                 </div>
-                <div style="background: ${skipped > 0 ? '#fef3c7' : '#f3f4f6'}; padding: 1rem; border-radius: 0.5rem;">
-                    <div style="font-size: 2rem; font-weight: 700; color: ${skipped > 0 ? '#d97706' : '#9ca3af'};">${skipped}</div>
-                    <div style="font-size: 0.75rem; color: ${skipped > 0 ? '#92400e' : '#6b7280'};">Duplicates Skipped</div>
+                <div style="background: ${skipped > 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)'}; padding: 1rem; border-radius: 0.5rem; border: 1px solid ${skipped > 0 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255,255,255,0.1)'};">
+                    <div style="font-size: 1.75rem; font-weight: 700; color: ${skipped > 0 ? '#fbbf24' : 'rgba(255,255,255,0.4)'}; font-family: 'Cormorant Garamond', serif;">${skipped}</div>
+                    <div style="font-size: 0.75rem; color: ${skipped > 0 ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.4)'};">Duplicates Skipped</div>
                 </div>
-                <div style="background: ${errors > 0 ? '#fee2e2' : '#f3f4f6'}; padding: 1rem; border-radius: 0.5rem;">
-                    <div style="font-size: 2rem; font-weight: 700; color: ${errors > 0 ? '#dc2626' : '#9ca3af'};">${errors}</div>
-                    <div style="font-size: 0.75rem; color: ${errors > 0 ? '#991b1b' : '#6b7280'};">Errors</div>
+                <div style="background: ${errors > 0 ? 'rgba(220, 38, 38, 0.1)' : 'rgba(255,255,255,0.05)'}; padding: 1rem; border-radius: 0.5rem; border: 1px solid ${errors > 0 ? 'rgba(220, 38, 38, 0.3)' : 'rgba(255,255,255,0.1)'};">
+                    <div style="font-size: 1.75rem; font-weight: 700; color: ${errors > 0 ? '#ff6b6b' : 'rgba(255,255,255,0.4)'}; font-family: 'Cormorant Garamond', serif;">${errors}</div>
+                    <div style="font-size: 0.75rem; color: ${errors > 0 ? 'rgba(255, 107, 107, 0.8)' : 'rgba(255,255,255,0.4)'};">Errors</div>
                 </div>
             </div>
             
@@ -1603,6 +1912,14 @@ function closeImportSummaryModal() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize preloader
+    initPreloader();
+    
+    // Initialize custom cursor (after preloader)
+    setTimeout(() => {
+        initCustomCursor();
+    }, 500);
+    
     // Check for lead generator imports
     const importCount = checkForLeadGeneratorImports();
     if (importCount > 0) {
@@ -1614,6 +1931,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Handle URL hash routing
     const hash = window.location.hash.substring(1);
     if (hash) {
         const [page, id] = hash.split('/');
