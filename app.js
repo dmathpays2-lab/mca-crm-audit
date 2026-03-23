@@ -279,24 +279,20 @@ function renderRecentActivity() {
         return;
     }
     
-    const getIcon = (type) => {
-        switch(type) {
-            case 'call': return 'phone';
-            case 'email': return 'envelope';
-            default: return 'clock';
-        }
-    };
-    
     const html = recentActivities.map(a => {
         const lead = store.leads.find(l => l.id === a.lead_id);
+        const config = getActivityTypeConfig(a.type);
         return `
             <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="navigate('lead-detail', {id: '${a.lead_id}'})\">
-                <i class="fas fa-${getIcon(a.type)}" style="color: #9ca3af; margin-right: 0.75rem; margin-top: 0.25rem;"></i>
-                <div style="flex: 1;">
+                <div style="width: 28px; height: 28px; background: ${config.color}20; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; color: ${config.color}; flex-shrink: 0;">
+                    <i class="fas fa-${config.icon}" style="font-size: 0.75rem;"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 0.875rem;">
-                        <span style="font-weight: 500;">${lead ? lead.business_name : 'Unknown'}</span> — ${a.subject || a.type}
+                        <span style="font-weight: 500;">${lead ? lead.business_name : 'Unknown'}</span>
+                        <span style="color: #6b7280;"> — ${config.label}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: #9ca3af;">${new Date(a.created_at).toLocaleString()}</div>
+                    <div style="font-size: 0.75rem; color: #9ca3af;">${formatActivityTime(a.created_at)}</div>
                 </div>
             </div>
         `;
@@ -360,17 +356,20 @@ function filterLeads() {
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.temperature.toLowerCase()}">${lead.temperature}</span></td>
             <td onclick="navigate('lead-detail', {id: '${lead.id}'});"><span class="badge badge-${lead.stage}">${lead.stage.replace(/_/g, ' ')}</span></td>
             <td>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); navigate('lead-detail', {id: '${lead.id}'});">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="quick-action-btn call" onclick="event.stopPropagation(); showQuickCallModal('${lead.id}');" title="Log Call">
+                        <i class="fas fa-phone"></i> Log
+                    </button>
+                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); navigate('lead-detail', {id: '${lead.id}'});" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fef2f2; color: #dc2626;" onclick="event.stopPropagation(); deleteLead('${lead.id}');">
+                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fef2f2; color: #dc2626;" onclick="event.stopPropagation(); deleteLead('${lead.id}');" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
-                    ${lead.phone ? `<a href="tel:${lead.phone}" style="color: #4f46e5; padding: 0.25rem;" onclick="event.stopPropagation();">
+                    ${lead.phone ? `<a href="tel:${lead.phone}" style="color: #16a34a; padding: 0.25rem;" onclick="event.stopPropagation();" title="Call">
                         <i class="fas fa-phone"></i>
                     </a>` : ''}
-                    ${lead.email ? `<a href="mailto:${lead.email}" style="color: #4f46e5; padding: 0.25rem;" onclick="event.stopPropagation();">
+                    ${lead.email ? `<a href="mailto:${lead.email}" style="color: #4f46e5; padding: 0.25rem;" onclick="event.stopPropagation();" title="Email">
                         <i class="fas fa-envelope"></i>
                     </a>` : ''}
                 </div>
@@ -565,28 +564,50 @@ function renderLeadDetail() {
         </div>
     `;
     
-    // Activities
+    // Activities Timeline
     const leadActivities = store.activities
         .filter(a => a.lead_id === lead.id)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     const activitiesContainer = document.getElementById('detail-activities');
     if (leadActivities.length === 0) {
-        activitiesContainer.innerHTML = '<p style="color: #6b7280;">No activities yet.</p>';
-    } else {
-        activitiesContainer.innerHTML = leadActivities.map(a => `
-            <div class="activity-item">
-                <div class="activity-icon"><i class="fas fa-${getActivityIcon(a.type)}"></i></div>
-                <div class="activity-content">
-                    <div class="activity-header">
-                        <span class="activity-type">${a.type}</span>
-                        <span class="activity-time">${new Date(a.created_at).toLocaleString()}</span>
-                    </div>
-                    ${a.subject ? `<div style="font-weight: 500;">${a.subject}</div>` : ''}
-                    ${a.content ? `<div style="font-size: 0.875rem; color: #6b7280;">${a.content}</div>` : ''}
-                </div>
+        activitiesContainer.innerHTML = `
+            <div class="activity-empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <p>No activities yet. Click "Log Activity" to add one.</p>
             </div>
-        `).join('');
+        `;
+    } else {
+        activitiesContainer.innerHTML = `
+            <div class="activity-timeline">
+                ${leadActivities.map(a => {
+                    const config = getActivityTypeConfig(a.type);
+                    const hasNotes = a.content && a.content.trim();
+                    return `
+                        <div class="activity-timeline-item">
+                            <div class="activity-timeline-icon ${config.category}">
+                                <i class="fas fa-${config.icon}"></i>
+                            </div>
+                            <div class="activity-timeline-content ${hasNotes ? 'collapsed' : ''}" id="activity-content-${a.id}" onclick="toggleActivityCollapse('${a.id}')">
+                                <div class="activity-timeline-header">
+                                    <div>
+                                        <div class="activity-timeline-title">${a.subject || 'Activity'}</div>
+                                        <div class="activity-timeline-meta">
+                                            <span><i class="fas fa-user"></i> ${a.created_by || 'System'}</span>
+                                            <span><i class="fas fa-clock"></i> ${formatActivityTime(a.created_at)}</span>
+                                        </div>
+                                    </div>
+                                    <span class="activity-timeline-type" style="background: ${config.color}20; color: ${config.color};">
+                                        <i class="fas fa-${config.icon}"></i> ${config.label}
+                                    </span>
+                                </div>
+                                ${hasNotes ? `<div class="activity-notes">${a.content}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
     }
     
     // Follow-ups
@@ -610,15 +631,244 @@ function renderLeadDetail() {
     }
 }
 
-function getActivityIcon(type) {
-    switch(type) {
-        case 'call': return 'phone';
-        case 'email': return 'envelope';
-        case 'meeting': return 'users';
-        case 'note': return 'sticky-note';
-        case 'sms': return 'comment';
-        default: return 'clock';
+// Activity Types Configuration
+const ACTIVITY_TYPES = {
+    call_outbound: { label: 'Call - Outbound', icon: 'phone', color: '#2563eb', category: 'call' },
+    call_inbound: { label: 'Call - Inbound', icon: 'phone', color: '#16a34a', category: 'call' },
+    email_sent: { label: 'Email - Sent', icon: 'envelope', color: '#db2777', category: 'email' },
+    email_received: { label: 'Email - Received', icon: 'envelope', color: '#9333ea', category: 'email' },
+    meeting: { label: 'Meeting', icon: 'users', color: '#d97706', category: 'meeting' },
+    note: { label: 'Note', icon: 'sticky-note', color: '#6b7280', category: 'note' },
+    status_change: { label: 'Status Change', icon: 'exchange-alt', color: '#059669', category: 'status' }
+};
+
+// Activity Modal State
+let currentActivityLeadId = null;
+let quickCallLeadId = null;
+
+// ============================================
+// Activity Functions
+// ============================================
+
+function showActivityModal(leadId = null) {
+    currentActivityLeadId = leadId || currentLeadId;
+    if (!currentActivityLeadId) return;
+    
+    // Set default datetime to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('activity-datetime').value = now.toISOString().slice(0, 16);
+    
+    // Reset form
+    document.getElementById('activity-type').value = 'call_outbound';
+    document.getElementById('activity-subject').value = '';
+    document.getElementById('activity-content').value = '';
+    document.getElementById('activity-followup-check').checked = false;
+    document.getElementById('followup-fields').style.display = 'none';
+    document.getElementById('activity-followup-datetime').value = '';
+    document.getElementById('activity-followup-title').value = '';
+    
+    // Update title with lead name if available
+    const lead = store.leads.find(l => l.id === currentActivityLeadId);
+    document.getElementById('activity-modal-title').textContent = lead 
+        ? `Log Activity - ${lead.business_name}` 
+        : 'Log Activity';
+    
+    document.getElementById('activity-modal').style.display = 'flex';
+}
+
+function hideActivityModal() {
+    document.getElementById('activity-modal').style.display = 'none';
+    currentActivityLeadId = null;
+}
+
+function toggleFollowUpFields() {
+    const checked = document.getElementById('activity-followup-check').checked;
+    document.getElementById('followup-fields').style.display = checked ? 'block' : 'none';
+    
+    if (checked) {
+        // Default to tomorrow same time
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+        document.getElementById('activity-followup-datetime').value = tomorrow.toISOString().slice(0, 16);
     }
+}
+
+function updateActivityForm() {
+    const type = document.getElementById('activity-type').value;
+    const subjectInput = document.getElementById('activity-subject');
+    
+    // Set default subjects based on type
+    const defaults = {
+        call_outbound: 'Outbound call',
+        call_inbound: 'Inbound call',
+        email_sent: 'Email sent',
+        email_received: 'Email received',
+        meeting: 'Meeting scheduled',
+        note: 'Note added',
+        status_change: 'Status update'
+    };
+    
+    if (!subjectInput.value) {
+        subjectInput.value = defaults[type] || '';
+    }
+}
+
+function saveActivity() {
+    const type = document.getElementById('activity-type').value;
+    const subject = document.getElementById('activity-subject').value.trim();
+    const content = document.getElementById('activity-content').value.trim();
+    const datetime = document.getElementById('activity-datetime').value;
+    
+    if (!subject) {
+        alert('Please enter a subject/title');
+        return;
+    }
+    
+    const activity = {
+        id: Date.now().toString(),
+        lead_id: currentActivityLeadId,
+        type: type,
+        subject: subject,
+        content: content,
+        created_at: datetime ? new Date(datetime).toISOString() : new Date().toISOString(),
+        created_by: `${store.user.firstName} ${store.user.lastName}`
+    };
+    
+    store.activities.push(activity);
+    
+    // Handle follow-up if checked
+    if (document.getElementById('activity-followup-check').checked) {
+        const followupDate = document.getElementById('activity-followup-datetime').value;
+        const followupTitle = document.getElementById('activity-followup-title').value.trim() || 'Follow-up';
+        
+        if (followupDate) {
+            store.followUps.push({
+                id: Date.now().toString(),
+                lead_id: currentActivityLeadId,
+                title: followupTitle,
+                due_at: new Date(followupDate).toISOString(),
+                status: 'pending',
+                related_activity_id: activity.id
+            });
+        }
+    }
+    
+    saveStore();
+    hideActivityModal();
+    
+    // Refresh current view
+    if (document.getElementById('lead-detail-page').classList.contains('active')) {
+        renderLeadDetail();
+    } else if (document.getElementById('leads-page').classList.contains('active')) {
+        renderLeads();
+    } else if (document.getElementById('dashboard-page').classList.contains('active')) {
+        renderDashboard();
+    }
+}
+
+// ============================================
+// Quick Log Call Functions
+// ============================================
+
+function showQuickCallModal(leadId) {
+    quickCallLeadId = leadId;
+    const lead = store.leads.find(l => l.id === leadId);
+    if (!lead) return;
+    
+    document.getElementById('quick-call-lead-name').textContent = lead.business_name;
+    
+    // Reset form
+    document.querySelector('input[name="quick-call-type"][value="call_outbound"]').checked = true;
+    document.getElementById('quick-call-outcome').value = 'Connected';
+    document.getElementById('quick-call-notes').value = '';
+    document.getElementById('quick-call-schedule-followup').checked = false;
+    document.getElementById('quick-call-followup-fields').style.display = 'none';
+    document.getElementById('quick-call-followup-date').value = '';
+    document.getElementById('quick-call-followup-title').value = '';
+    
+    // Default follow-up date (tomorrow)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+    document.getElementById('quick-call-followup-date').value = tomorrow.toISOString().slice(0, 16);
+    
+    document.getElementById('quick-call-modal').style.display = 'flex';
+}
+
+function hideQuickCallModal() {
+    document.getElementById('quick-call-modal').style.display = 'none';
+    quickCallLeadId = null;
+}
+
+// Toggle follow-up fields in quick call modal
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'quick-call-schedule-followup') {
+        document.getElementById('quick-call-followup-fields').style.display = e.target.checked ? 'block' : 'none';
+    }
+});
+
+function saveQuickCall() {
+    const callType = document.querySelector('input[name="quick-call-type"]:checked').value;
+    const outcome = document.getElementById('quick-call-outcome').value;
+    const notes = document.getElementById('quick-call-notes').value.trim();
+    
+    const activity = {
+        id: Date.now().toString(),
+        lead_id: quickCallLeadId,
+        type: callType,
+        subject: `Call - ${outcome}`,
+        content: notes,
+        created_at: new Date().toISOString(),
+        created_by: `${store.user.firstName} ${store.user.lastName}`,
+        outcome: outcome
+    };
+    
+    store.activities.push(activity);
+    
+    // Handle follow-up scheduling
+    if (document.getElementById('quick-call-schedule-followup').checked) {
+        const followupDate = document.getElementById('quick-call-followup-date').value;
+        const followupTitle = document.getElementById('quick-call-followup-title').value.trim() || `Follow-up: ${outcome}`;
+        
+        if (followupDate) {
+            store.followUps.push({
+                id: Date.now().toString(),
+                lead_id: quickCallLeadId,
+                title: followupTitle,
+                due_at: new Date(followupDate).toISOString(),
+                status: 'pending',
+                related_activity_id: activity.id
+            });
+        }
+    }
+    
+    saveStore();
+    hideQuickCallModal();
+    
+    // Refresh view
+    if (document.getElementById('leads-page').classList.contains('active')) {
+        renderLeads();
+    } else if (document.getElementById('lead-detail-page').classList.contains('active')) {
+        renderLeadDetail();
+    }
+}
+
+function toggleActivityCollapse(activityId) {
+    const content = document.getElementById(`activity-content-${activityId}`);
+    if (content) {
+        content.classList.toggle('collapsed');
+    }
+}
+
+function getActivityIcon(type) {
+    const config = ACTIVITY_TYPES[type] || { icon: 'clock', category: 'default' };
+    return config.icon;
+}
+
+function getActivityTypeConfig(type) {
+    return ACTIVITY_TYPES[type] || { label: type, icon: 'clock', color: '#4f46e5', category: 'default' };
 }
 
 function switchTab(tab) {
@@ -640,15 +890,21 @@ function updateLeadTemperature() {
 function updateLeadStage() {
     const lead = store.leads.find(l => l.id === currentLeadId);
     if (lead) {
-        lead.stage = document.getElementById('detail-stage').value;
+        const oldStage = lead.stage;
+        const newStage = document.getElementById('detail-stage').value;
+        lead.stage = newStage;
+        
         store.activities.push({
             id: Date.now().toString(),
             lead_id: currentLeadId,
             type: 'status_change',
-            subject: `Stage changed to ${lead.stage.replace(/_/g, ' ')}`,
-            created_at: new Date().toISOString()
+            subject: `Stage Changed`,
+            content: `From "${oldStage.replace(/_/g, ' ')}" to "${newStage.replace(/_/g, ' ')}"`,
+            created_at: new Date().toISOString(),
+            created_by: `${store.user.firstName} ${store.user.lastName}`
         });
         saveStore(); // FIXED: Save to localStorage
+        renderLeadDetail(); // Refresh to show the new activity
     }
 }
 
@@ -998,10 +1254,106 @@ function saveSettings() {
 }
 
 // ============================================
+// Lead Import from Lead Generator
+// ============================================
+
+const CRM_BRIDGE_KEY = 'mca_crm_bridge';
+
+function checkForLeadGeneratorImports() {
+    try {
+        const bridgeData = localStorage.getItem(CRM_BRIDGE_KEY);
+        if (!bridgeData) return 0;
+        
+        const leads = JSON.parse(bridgeData);
+        return Array.isArray(leads) ? leads.length : 0;
+    } catch (e) {
+        console.error('Error checking bridge:', e);
+        return 0;
+    }
+}
+
+function importLeadsFromBridge() {
+    try {
+        const bridgeData = localStorage.getItem(CRM_BRIDGE_KEY);
+        if (!bridgeData) {
+            alert('No leads found in bridge storage. Go to Lead Generator and select leads to export.');
+            return;
+        }
+        
+        const leads = JSON.parse(bridgeData);
+        if (!Array.isArray(leads) || leads.length === 0) {
+            alert('No leads found to import.');
+            return;
+        }
+        
+        // Add leads to CRM
+        let imported = 0;
+        let duplicates = 0;
+        
+        leads.forEach(lead => {
+            // Check for duplicates by phone
+            const exists = store.leads.some(l => 
+                l.phone === lead.phone && lead.phone !== ''
+            );
+            
+            if (exists) {
+                duplicates++;
+            } else {
+                store.leads.unshift(lead);
+                imported++;
+                
+                // Add activity
+                store.activities.unshift({
+                    id: String(Date.now() + Math.random()),
+                    lead_id: lead.id,
+                    type: 'status_change',
+                    subject: 'Lead Imported',
+                    content: `Imported from Lead Generator (${lead.source || 'Unknown'})`,
+                    created_at: new Date().toISOString()
+                });
+            }
+        });
+        
+        saveStore();
+        
+        // Clear the bridge
+        localStorage.removeItem(CRM_BRIDGE_KEY);
+        
+        // Show result
+        alert(`Import Complete!\n\n✅ Imported: ${imported} leads\n⚠️ Duplicates skipped: ${duplicates}\n\nYour leads are now in the CRM.`);
+        
+        // Refresh current view
+        const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
+        if (currentPage) {
+            navigate(currentPage);
+        }
+        
+        // Hide import banner
+        const banner = document.getElementById('import-banner');
+        if (banner) banner.style.display = 'none';
+        
+    } catch (e) {
+        console.error('Import error:', e);
+        alert('Error importing leads. Please try again.');
+    }
+}
+
+// ============================================
 // Initialize
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Check for lead generator imports
+    const importCount = checkForLeadGeneratorImports();
+    if (importCount > 0) {
+        const banner = document.getElementById('import-banner');
+        const countSpan = document.getElementById('import-count');
+        if (banner && countSpan) {
+            banner.style.display = 'block';
+            countSpan.textContent = importCount;
+        }
+    }
+    
     const hash = window.location.hash.substring(1);
     if (hash) {
         const [page, id] = hash.split('/');
@@ -1017,10 +1369,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function formatActivityTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hr ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {
-    const modal = document.getElementById('add-lead-modal');
-    if (e.target === modal) {
+    const addLeadModal = document.getElementById('add-lead-modal');
+    const activityModal = document.getElementById('activity-modal');
+    const quickCallModal = document.getElementById('quick-call-modal');
+    
+    if (e.target === addLeadModal) {
         hideAddLeadModal();
+    }
+    if (e.target === activityModal) {
+        hideActivityModal();
+    }
+    if (e.target === quickCallModal) {
+        hideQuickCallModal();
     }
 });

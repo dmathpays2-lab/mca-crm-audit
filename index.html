@@ -166,6 +166,150 @@
         .activity-type { font-weight: 500; text-transform: capitalize; }
         .activity-time { font-size: 0.75rem; color: #9ca3af; }
         
+        /* Activity Timeline Styles */
+        .activity-timeline { position: relative; }
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        .activity-timeline-item {
+            position: relative;
+            display: flex;
+            margin-bottom: 1rem;
+            padding-left: 56px;
+        }
+        .activity-timeline-icon {
+            position: absolute;
+            left: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            z-index: 1;
+        }
+        .activity-timeline-icon.call { background: #dbeafe; color: #2563eb; }
+        .activity-timeline-icon.email { background: #fce7f3; color: #db2777; }
+        .activity-timeline-icon.meeting { background: #f3e8ff; color: #9333ea; }
+        .activity-timeline-icon.note { background: #fef3c7; color: #d97706; }
+        .activity-timeline-icon.status { background: #d1fae5; color: #059669; }
+        .activity-timeline-icon.default { background: #e0e7ff; color: #4f46e5; }
+        
+        .activity-timeline-content {
+            flex: 1;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .activity-timeline-content:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-color: #d1d5db;
+        }
+        .activity-timeline-content.collapsed .activity-notes {
+            display: none;
+        }
+        .activity-timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .activity-timeline-title {
+            font-weight: 600;
+            color: #111827;
+        }
+        .activity-timeline-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            background: #f3f4f6;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .activity-timeline-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 0.5rem;
+        }
+        .activity-timeline-meta i {
+            margin-right: 0.25rem;
+        }
+        .activity-notes {
+            font-size: 0.875rem;
+            color: #4b5563;
+            line-height: 1.5;
+            padding-top: 0.5rem;
+            border-top: 1px solid #f3f4f6;
+            margin-top: 0.5rem;
+        }
+        .activity-notes:empty {
+            display: none;
+        }
+        
+        /* Quick Action Buttons */
+        .quick-action-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            gap: 0.375rem;
+        }
+        .quick-action-btn.call {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .quick-action-btn.call:hover {
+            background: #bfdbfe;
+        }
+        .quick-action-btn.email {
+            background: #fce7f3;
+            color: #be185d;
+        }
+        .quick-action-btn.email:hover {
+            background: #fbcfe8;
+        }
+        
+        /* Modal enhancements */
+        .modal-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        /* Empty state */
+        .activity-empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #9ca3af;
+        }
+        .activity-empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+        
         /* Hide/show pages */
         .page { display: none; }
         .page.active { display: block; }
@@ -243,6 +387,24 @@
                     <button class="btn btn-primary" onclick="navigateToAddLead()">
                         <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add Lead
                     </button>
+                </div>
+                
+                <!-- Import Banner (hidden by default) -->
+                <div id="import-banner" class="card" style="display: none; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 48px; height: 48px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-download" style="color: white; font-size: 1.25rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #92400e; font-size: 1.125rem;">📥 Leads Ready to Import!</div>
+                                <div style="color: #78350f;"><span id="import-count">0</span> leads from Lead Generator waiting to be added</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="importLeadsFromBridge()" style="background: #f59e0b; color: white;">
+                            <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Import Now
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="stats-grid">
@@ -391,6 +553,132 @@
                 </div>
             </div>
             
+            <!-- Activity Modal -->
+            <div id="activity-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 600;" id="activity-modal-title">Log Activity</h3>
+                        <button onclick="hideActivityModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280;"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Activity Type *</label>
+                        <select class="form-input" id="activity-type" onchange="updateActivityForm()">
+                            <option value="call_outbound">📞 Call - Outbound</option>
+                            <option value="call_inbound">📞 Call - Inbound</option>
+                            <option value="email_sent">📧 Email - Sent</option>
+                            <option value="email_received">📧 Email - Received</option>
+                            <option value="meeting">🤝 Meeting</option>
+                            <option value="note">📝 Note</option>
+                            <option value="status_change">🔄 Status Change</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Subject/Title *</label>
+                        <input type="text" class="form-input" id="activity-subject" placeholder="e.g., Follow-up call about funding needs">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes/Content</label>
+                        <textarea class="form-input" id="activity-content" rows="4" placeholder="Enter details about this activity..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" class="form-input" id="activity-datetime">
+                    </div>
+                    
+                    <div class="form-group" style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="activity-followup-check" onchange="toggleFollowUpFields()">
+                            <label for="activity-followup-check" style="font-weight: 500; margin: 0;">Set Follow-up Reminder</label>
+                        </div>
+                        <div id="followup-fields" style="display: none; margin-top: 0.75rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label class="form-label" style="font-size: 0.75rem;">Follow-up Date</label>
+                                    <input type="datetime-local" class="form-input" id="activity-followup-datetime">
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 0.75rem;">Reminder Title</label>
+                                    <input type="text" class="form-input" id="activity-followup-title" placeholder="e.g., Call back">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                        <button class="btn btn-secondary" onclick="hideActivityModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveActivity()">Save Activity</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Log Call Modal -->
+            <div id="quick-call-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 450px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 600;"><i class="fas fa-phone" style="color: #4f46e5; margin-right: 0.5rem;"></i>Quick Log Call</h3>
+                        <button onclick="hideQuickCallModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280;"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.875rem; color: #6b7280;">Logging call for:</div>
+                        <div style="font-weight: 600; font-size: 1.125rem;" id="quick-call-lead-name">-</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Call Type *</label>
+                        <div style="display: flex; gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="quick-call-type" value="call_outbound" checked>
+                                <span>Outbound</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="quick-call-type" value="call_inbound">
+                                <span>Inbound</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Call Outcome *</label>
+                        <select class="form-input" id="quick-call-outcome">
+                            <option value="Connected">Connected</option>
+                            <option value="Left Voicemail">Left Voicemail</option>
+                            <option value="No Answer">No Answer</option>
+                            <option value="Busy">Busy</option>
+                            <option value="Wrong Number">Wrong Number</option>
+                            <option value="Callback Requested">Callback Requested</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-input" id="quick-call-notes" rows="3" placeholder="Quick notes about the call..."></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="quick-call-schedule-followup">
+                        <label for="quick-call-schedule-followup" style="margin: 0;">Schedule follow-up</label>
+                    </div>
+                    
+                    <div id="quick-call-followup-fields" style="display: none; margin-top: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <input type="datetime-local" class="form-input" id="quick-call-followup-date">
+                            <input type="text" class="form-input" id="quick-call-followup-title" placeholder="Follow-up title">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                        <button class="btn btn-secondary" onclick="hideQuickCallModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveQuickCall()">Log Call</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
             <!-- Pipeline Page -->
             <div class="page" id="pipeline-page">
                 <div class="page-header">
@@ -469,7 +757,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">Activity History</h3>
-                            <button class="btn btn-primary">Log Activity</button>
+                            <button class="btn btn-primary" onclick="showActivityModal()"><i class="fas fa-plus" style="margin-right: 0.5rem;"></i>Log Activity</button>
                         </div>
                         <div id="detail-activities"></div>
                     </div>
